@@ -112,9 +112,9 @@ function decreaseQty(p) {
             <div className="logo-mark">🌿</div>
             <div className="brand-name">StarBazar</div>
           </div>
-          <div className="search">
+          {/* <div className="search">
             <input placeholder="Search for products..." />
-          </div>
+          </div> */}
           <nav className="header-actions">
             <button className="icon-btn">❤</button>
             <button className="icon-btn" onClick={() => goToCheckout()}>🛒 <span className="cart-count">{Object.values(cart).reduce((total, item) => total + item.qty, 0)}</span></button>

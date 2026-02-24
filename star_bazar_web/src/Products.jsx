@@ -248,99 +248,43 @@ const cart = Object.values(cartObject);
           {/* Category Filter */}
           <div className="filter-group">
             <h4 className="filter-title">Categories</h4>
-            <select 
-              value={filters.category}
-              onChange={(e) => handleFilterChange('category', e.target.value)}
-              className="filter-select"
-            >
+            {/* Custom scrollable category list for better UX when there are many categories */}
+            <div className="filter-list" role="listbox" aria-label="Categories">
               {categories.map(cat => (
-                <option key={cat} value={cat}>
+                <button
+                  key={cat}
+                  className={`filter-item ${filters.category === cat ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('category', cat)}
+                  role="option"
+                  aria-selected={filters.category === cat}
+                >
                   {cat === 'all' ? 'All Categories' : cat}
-                </option>
+                </button>
               ))}
-            </select>
-          </div>
-
-          {/* Price Filter */}
-          <div className="filter-group">
-            <h4 className="filter-title">Price Range</h4>
-            <div className="price-inputs">
-              <div className="price-input-group">
-                <label>Min:</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="15"
-                  value={filters.priceRange[0]}
-                  onChange={(e) => handlePriceChange([parseFloat(e.target.value) || 0, filters.priceRange[1]])}
-                  className="price-input"
-                />
-              </div>
-              <div className="price-input-group">
-                <label>Max:</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="15"
-                  value={filters.priceRange[1]}
-                  onChange={(e) => handlePriceChange([filters.priceRange[0], parseFloat(e.target.value) || 15])}
-                  className="price-input"
-                />
-              </div>
-            </div>
-            <div className="price-display">
-              ${filters.priceRange[0].toFixed(2)} - ${filters.priceRange[1].toFixed(2)}
             </div>
           </div>
 
-          {/* Brand Filter */}
+          {/* Sort By (moved below Categories) */}
           <div className="filter-group">
-            <h4 className="filter-title">Brand</h4>
-            <select 
-              value={filters.brand}
-              onChange={(e) => handleFilterChange('brand', e.target.value)}
+            <h4 className="filter-title">Sort by</h4>
+            <select
+              id="sort-sidebar"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
               className="filter-select"
             >
-              <option value="all">All Brands</option>
-              {brands.slice(1).map(brand => (
-                <option key={brand} value={brand}>{brand}</option>
-              ))}
+              <option value="low_to_high">Price: Low to High</option>
+              <option value="high_to_low">Price: High to Low</option>
             </select>
           </div>
 
-          {/* Availability Filter */}
-          <div className="filter-group">
-            <h4 className="filter-title">Availability</h4>
-            <select 
-              value={filters.availability}
-              onChange={(e) => handleFilterChange('availability', e.target.value)}
-              className="filter-select"
-            >
-              <option value="all">All Products</option>
-              <option value="in-stock">In Stock</option>
-              <option value="low-stock">Low Stock</option>
-              <option value="out-of-stock">Out of Stock</option>
-            </select>
-          </div>
+          {/* Removed: Price Range, Brand, Availability filters per request */}
         </aside>
 
         <section className="products-main">
           <div className="products-top-bar">
             <div className="results-count">
               {totalCount} product{allProducts.length !== 1 ? 's' : ''} found
-            </div>
-            <div className="sort-section">
-              <label htmlFor="sort">Sort by: </label>
-              <select 
-                id="sort"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="sort-select"
-              >
-                <option value="low_to_high">Price: Low to High</option>
-                <option value="high_to_low">Price: High to Low</option>
-                {/* <option value="name">Name: A to Z</option> */}
-              </select>
             </div>
           </div>
 
