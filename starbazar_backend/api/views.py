@@ -2,7 +2,8 @@ import requests
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 import json
-from datetime import date
+from datetime import date, datetime
+
 
 FRAPPE_URL = "http://172.28.180.147:8001"
 API_KEY = "823008797018d0a"
@@ -12,6 +13,264 @@ HEADERS = {
     "Authorization": f"token {API_KEY}:{API_SECRET}",
     "Host": "groceryv15.localhost"
 }
+
+# @api_view(['GET'])
+# def all_products(request):
+
+#     page = int(request.GET.get("page", 1))
+#     page_size = 12
+#     category = request.GET.get("category")
+#     search = request.GET.get("search")
+#     min_price = request.GET.get("min_price")
+#     max_price = request.GET.get("max_price")
+
+#     filters = []
+
+#     if category and category != "all":
+#         filters.append(["item_group", "=", category])
+
+#     if search:
+#         filters.append(["item_name", "like", f"%{search}%"])
+
+#     # 🔥 Fetch ONLY 24 random items from filtered dataset
+#     items_url = (
+#         f"{FRAPPE_URL}/api/resource/Item?"
+#         f'fields=["name","item_name","image","stock_uom","item_group"]'
+#         f"&limit_page_length=24"
+#         f"&order_by=RAND()"
+#     )
+
+#     if filters:
+#         items_url += f"&filters={json.dumps(filters)}"
+
+#     items_response = requests.get(items_url, headers=HEADERS).json()
+#     items_data = items_response.get("data", [])
+
+#     total_count = len(items_data)  # max 24
+
+#     # 🔥 Pagination inside those 24
+#     start = (page - 1) * page_size
+#     end = start + page_size
+#     items_page = items_data[start:end]
+
+#     final_data = []
+
+#     for item in items_page:
+
+#         # Fetch latest selling price
+#         price_url = (
+#             f"{FRAPPE_URL}/api/resource/Item%20Price?"
+#             f'filters=[["item_code","=","{item["name"]}"],'
+#             f'["price_list","=","Standard Selling"]]'
+#             f'&fields=["price_list_rate"]'
+#             f'&limit_page_length=1'
+#             f'&order_by=creation desc'
+#         )
+
+#         price_res = requests.get(price_url, headers=HEADERS).json()
+#         price_data = price_res.get("data", [])
+#         price = price_data[0]["price_list_rate"] if price_data else 0
+
+#         # Apply price filter safely
+#         if min_price and float(price) < float(min_price):
+#             continue
+#         if max_price and float(price) > float(max_price):
+#             continue
+
+#         # Fetch latest stock
+#         stock_url = (
+#             f"{FRAPPE_URL}/api/resource/Stock%20Ledger%20Entry?"
+#             f'filters=[["item_code","=","{item["name"]}"]]'
+#             f'&fields=["qty_after_transaction"]'
+#             f'&limit_page_length=1'
+#             f'&order_by=posting_date desc, posting_time desc'
+#         )
+
+#         stock_res = requests.get(stock_url, headers=HEADERS).json()
+#         stock_data = stock_res.get("data", [])
+#         stock = stock_data[0]["qty_after_transaction"] if stock_data else 0
+
+#         final_data.append({
+#             "item_code": item["name"],
+#             "item_name": item["item_name"],
+#             "image": item["image"],
+#             "unit": item["stock_uom"],
+#             "price": price,
+#             "category": item["item_group"],
+#             "brand": None,
+#             "stock": stock
+#         })
+
+#     return Response({
+#         "products": final_data,
+#         "total_count": total_count,
+#         "page": page,
+#         "page_size": page_size
+#     })
+
+@api_view(['GET'])
+def all_products(request):
+
+    page = int(request.GET.get("page", 1))
+    page_size = 12
+
+    category = request.GET.get("category")
+    search = request.GET.get("search")
+    availability = request.GET.get("availability")
+    min_price = request.GET.get("min_price")
+    max_price = request.GET.get("max_price")
+    sort_by = request.GET.get("sort_by")
+
+    try:
+        min_price = float(min_price) if min_price not in [None, ""] else None
+    except:
+        min_price = None
+
+    try:
+        max_price = float(max_price) if max_price not in [None, ""] else None
+    except:
+        max_price = None
+
+    filters = []
+
+    if category and category != "all":
+        filters.append(["item_group", "=", category])
+
+    if search:
+        filters.append(["item_name", "like", f"%{search}%"])
+
+    # 🔥 1️⃣ Fetch RANDOM 24 items
+    items_url = (
+        f"{FRAPPE_URL}/api/resource/Item?"
+        f'fields=["name","item_name","image","stock_uom","item_group"]'
+        f"&limit_page_length=100"
+        f"&order_by=RAND()"
+    )
+
+    if filters:
+        items_url += f"&filters={json.dumps(filters)}"
+
+    items_response = requests.get(items_url, headers=HEADERS).json()
+    items_data = items_response.get("data", [])
+
+    if not items_data:
+        return Response({
+            "products": [],
+            "total_count": 0
+        })
+
+    # Extract item codes
+    item_codes = [item["name"] for item in items_data]
+    item_codes_json = json.dumps(item_codes)
+
+    # 🔥 2️⃣ Batch fetch prices
+    price_url = (
+        f"{FRAPPE_URL}/api/resource/Item%20Price?"
+        f'filters=[["item_code","in",{item_codes_json}],'
+        f'["price_list","=","Standard Selling"]]'
+        f'&fields=["item_code","price_list_rate","creation"]'
+        f'&order_by=creation desc'
+    )
+
+    price_response = requests.get(price_url, headers=HEADERS).json()
+    price_data = price_response.get("data", [])
+
+    price_map = {}
+    for price in price_data:
+        if price["item_code"] not in price_map:
+            price_map[price["item_code"]] = price["price_list_rate"]
+    
+    # 🔥 Apply Sorting
+        if sort_by == "low_to_high":
+            items_data = sorted(
+                items_data,
+                key=lambda item: float(price_map.get(item["name"], 0) or 0)
+            )
+
+        elif sort_by == "high_to_low":
+            items_data = sorted(
+                items_data,
+                key=lambda item: float(price_map.get(item["name"], 0) or 0),
+                reverse=True
+            )
+
+    # 🔥 3️⃣ Batch fetch stock
+    stock_url = (
+        f"{FRAPPE_URL}/api/resource/Stock%20Ledger%20Entry?"
+        f'filters=[["item_code","in",{item_codes_json}]]'
+        f'&fields=["item_code","qty_after_transaction","posting_date","posting_time"]'
+        f'&order_by=posting_date desc, posting_time desc'
+    )
+
+    stock_response = requests.get(stock_url, headers=HEADERS).json()
+    stock_data = stock_response.get("data", [])
+
+    stock_map = {}
+    for entry in stock_data:
+        if entry["item_code"] not in stock_map:
+            stock_map[entry["item_code"]] = entry["qty_after_transaction"]
+
+    # 🔥 4️⃣ Apply availability filter
+    if availability == "in-stock":
+        items_data = [
+            item for item in items_data
+            if stock_map.get(item["name"], 0) > 0
+        ]
+
+    elif availability == "out-of-stock":
+        items_data = [
+            item for item in items_data
+            if stock_map.get(item["name"], 0) <= 0
+        ]
+    
+    # 🔥 Apply price range filter
+    if min_price is not None or max_price is not None:
+        filtered_items = []
+
+        for item in items_data:
+            price = float(price_map.get(item["name"], 0))
+
+            if min_price is not None and price < min_price:
+                continue
+
+            if max_price is not None and price > max_price:
+                continue
+
+            filtered_items.append(item)
+
+        items_data = filtered_items
+
+    # 🔥 Ensure max 24 (never exceed)
+    items_data = items_data[:40]
+
+    total_count = len(items_data)
+
+    # 🔥 5️⃣ Pagination (12 per page)
+    start = (page - 1) * page_size
+    end = start + page_size
+    items_page = items_data[start:end]
+
+    # 🔥 6️⃣ Merge everything
+    final_data = []
+
+    for item in items_page:
+        final_data.append({
+            "item_code": item["name"],
+            "item_name": item["item_name"],
+            "image": item["image"],
+            "unit": item["stock_uom"],
+            "price": price_map.get(item["name"], 0),
+            "category": item["item_group"],
+            "brand": None,
+            "stock": stock_map.get(item["name"], 0)
+        })
+
+    return Response({
+        "products": final_data,
+        "total_count": total_count,
+        "page": page,
+        "page_size": page_size
+    })
 
 @api_view(['GET'])
 def best_sellers(request):
@@ -125,72 +384,6 @@ def shop_all_product(request):
 
     return Response(final_data)
 
-# @api_view(['GET'])
-# def pricing_offers(request):
-
-#     today = str(date.today())
-
-#     # 1️⃣ Get active Pricing Rules
-#     rule_url = (
-#         f"{FRAPPE_URL}/api/resource/Pricing%20Rule?"
-#         f'filters=[["Pricing Rule","selling","=",1],'
-#         f'["Pricing Rule","valid_from","<=","{today}"],'
-#         f'["Pricing Rule","valid_upto",">=","{today}"]]'
-#         f'&fields=["naming_series","title","min_qty","valid_from","valid_upto","rate"]'
-#     )
-
-#     rules = requests.get(rule_url, headers=HEADERS).json().get("data", [])
-
-#     final_data = []
-
-#     for rule in rules:
-
-#         # 2️⃣ Get child items for this rule
-#         child_url = (
-#             f"{FRAPPE_URL}/api/resource/Pricing%20Rule%20Item%20Code?"
-#             f'filters=[["Pricing Rule Item Code","parent","=","{rule["naming_series"]}"]]'
-#             f'&fields=["item_code"]'
-#         )
-
-#         children = requests.get(child_url, headers=HEADERS).json().get("data", [])
-
-#         for child in children:
-
-#             item_code = child["item_code"]
-
-#             # 3️⃣ Get Item details
-#             item_url = (
-#                 f"{FRAPPE_URL}/api/resource/Item/{item_code}"
-#             )
-
-#             item_data = requests.get(item_url, headers=HEADERS).json().get("data", {})
-
-#             # 4️⃣ Get original price
-#             price_url = (
-#                 f"{FRAPPE_URL}/api/resource/Item%20Price?"
-#                 f'filters=[["Item Price","item_code","=","{item_code}"],'
-#                 f'["Item Price","price_list","=","Standard Selling"]]'
-#                 f'&fields=["price_list_rate"]'
-#             )
-
-#             price_data = requests.get(price_url, headers=HEADERS).json().get("data", [])
-
-#             original_price = price_data[0]["price_list_rate"] if price_data else 0
-
-#             final_data.append({
-#                 "item_code": item_code,
-#                 "title": rule["title"],
-#                 "min_qty": rule["min_qty"],
-#                 "valid_from": rule["valid_from"],
-#                 "valid_upto": rule["valid_upto"],
-#                 "offer_price": rule["rate"],
-#                 "original_price": original_price,
-#                 "uom": item_data.get("stock_uom"),
-#                 "image": item_data.get("image")
-#             })
-
-#     return Response(final_data)
-
 @api_view(['GET'])
 def pricing_offers(request):
 
@@ -214,7 +407,6 @@ def pricing_offers(request):
 
     rule_response = requests.get(rule_url, headers=HEADERS, params=payload).json()
     rules = rule_response.get("message", [])
-    print(rules)
     if not rules:
         return Response([])
 
@@ -240,7 +432,6 @@ def pricing_offers(request):
                 "parent": rule["name"],
                 "item_code": row["item_code"]
             })
-    print(children)
 
     if not children:
         return Response([])
@@ -306,3 +497,4 @@ def pricing_offers(request):
         })
 
     return Response(final_data)
+
