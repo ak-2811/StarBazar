@@ -5,45 +5,46 @@ import { useNavigate } from "react-router-dom";
 import { useEffect } from 'react'
 import axios from 'axios'
 
-function Products({ selectedCategory = null, onNavigate, onAddToCart }) {
+function Products({ selectedCategory = null, onNavigate }) {
   // Enhanced product data with categories, brands, and prices
-  // const allProducts = [
-  //   { id: 1, name: 'Red Apples', price: 2.99, unit: '/ lb', category: 'Fruits', brand: 'FarmFresh', emoji: '🍎', availability: 'in-stock' },
-  //   { id: 2, name: 'Organic Milk', price: 3.49, unit: '/ l', category: 'Dairy', brand: 'OrganicDairy', emoji: '🥛', availability: 'in-stock' },
-  //   { id: 3, name: 'Potato Chips', price: 1.99, unit: '/ pc', category: 'Snacks', brand: 'CrunchyBites', emoji: '🥔', availability: 'in-stock' },
-  //   { id: 4, name: 'Fresh Chicken', price: 5.99, unit: '/ lb', category: 'Proteins', brand: 'FreshMeat', emoji: '🍗', availability: 'in-stock' },
-  //   { id: 5, name: 'Bananas', price: 1.29, unit: '/ lb', category: 'Fruits', brand: 'TropicalFarm', emoji: '🍌', availability: 'in-stock' },
-  //   { id: 6, name: 'Cheddar Cheese', price: 4.59, unit: '/ 200g', category: 'Dairy', brand: 'DairyPro', emoji: '🧀', availability: 'in-stock' },
-  //   { id: 7, name: 'Blueberry Yogurt', price: 2.49, unit: '/ cup', category: 'Dairy', brand: 'YogurtDelight', emoji: '🍯', availability: 'in-stock' },
-  //   { id: 8, name: 'Frozen Pizza', price: 6.99, unit: '/ pc', category: 'Frozen', brand: 'FrozenBites', emoji: '🍕', availability: 'low-stock' },
-  //   { id: 9, name: 'Broccoli', price: 2.49, unit: '/ bunch', category: 'Vegetables', brand: 'GreenFields', emoji: '🥦', availability: 'in-stock' },
-  //   { id: 10, name: 'Orange Juice', price: 3.99, unit: '/ l', category: 'Beverages', brand: 'FreshPress', emoji: '🧃', availability: 'in-stock' },
-  //   { id: 11, name: 'Maggi Whole Wheat Pack of 3', price: 1.49, unit: '/ pack', category: 'Snacks', brand: 'Maggi', emoji: '📦', availability: 'in-stock' },
-  //   { id: 12, name: 'Spinach', price: 2.19, unit: '/ bunch', category: 'Vegetables', brand: 'GreenFields', emoji: '🥬', availability: 'in-stock' },
-  //   { id: 13, name: 'Tomatoes', price: 1.79, unit: '/ lb', category: 'Vegetables', brand: 'FarmFresh', emoji: '🍅', availability: 'in-stock' },
-  //   { id: 14, name: 'Carrots', price: 1.49, unit: '/ lb', category: 'Vegetables', brand: 'GreenFields', emoji: '🥕', availability: 'in-stock' },
-  //   { id: 15, name: 'Salmon Fillet', price: 8.99, unit: '/ lb', category: 'Proteins', brand: 'FreshMeat', emoji: '🐟', availability: 'in-stock' },
-  //   { id: 16, name: 'Beef Steak', price: 12.99, unit: '/ lb', category: 'Proteins', brand: 'PremiumMeat', emoji: '🥩', availability: 'low-stock' },
-  //   { id: 17, name: 'Greek Yogurt', price: 3.29, unit: '/ 500g', category: 'Dairy', brand: 'GreekDelight', emoji: '🍚', availability: 'in-stock' },
-  //   { id: 18, name: 'Mozzarella', price: 5.49, unit: '/ 250g', category: 'Dairy', brand: 'DairyPro', emoji: '🧀', availability: 'in-stock' },
-  //   { id: 19, name: 'Apple Juice', price: 2.99, unit: '/ l', category: 'Beverages', brand: 'FreshPress', emoji: '🍎', availability: 'in-stock' },
-  //   { id: 20, name: 'Coca Cola', price: 1.99, unit: '/ 500ml', category: 'Beverages', brand: 'CocaCola', emoji: '🥤', availability: 'in-stock' },
-  //   { id: 21, name: 'Ice Cream', price: 4.99, unit: '/ 500ml', category: 'Frozen', brand: 'FrozenyDelight', emoji: '🍦', availability: 'in-stock' },
-  //   { id: 22, name: 'Frozen Vegetables', price: 3.49, unit: '/ bag', category: 'Frozen', brand: 'FrozenBites', emoji: '❄️', availability: 'in-stock' },
-  //   { id: 23, name: 'Peanuts', price: 2.79, unit: '/ 200g', category: 'Snacks', brand: 'CrunchyBites', emoji: '🥜', availability: 'out-of-stock' },
-  //   { id: 24, name: 'Chocolate Bar', price: 1.29, unit: '/ pc', category: 'Snacks', brand: 'SweetTreats', emoji: '🍫', availability: 'in-stock' },
-  // ]
 const [allProducts, setAllProducts] = useState([])
 
 const navigate=useNavigate();
-const cartObject = location.state?.cart || {};
+// const cartObject = location.state?.cart || {};
 // const offers = location.state?.offers || [];
 
 // Convert object → array (REAL cart)
-const cart = Object.values(cartObject);
+// const cart = Object.values(cartObject);
+const [specialOffers,setSpecialOffers]=useState([])
+useEffect(() => {
+  axios.get("http://localhost:8000/api/pricing-offers/")
+    .then(res => {
+      setSpecialOffers(res.data)
+    })
+    .catch(err => {
+      console.error("Error fetching best sellers:", err)
+    })
+}, [])
 
-  const [quantities, setQuantities] = useState({})
-  const [addingToCart, setAddingToCart] = useState({})
+const [cart, setCart] = useState(
+  JSON.parse(localStorage.getItem("cart")) || {}
+)
+console.log("Cart Keys:", Object.keys(cart))
+
+useEffect(() => {
+  localStorage.setItem("cart", JSON.stringify(cart))
+}, [cart])
+
+const goToCheckout = () => {
+  navigate("/checkout", {
+    state: {
+      offers: specialOffers
+    }
+  });
+};
+
+  // const [quantities, setQuantities] = useState({})
+  // const [addingToCart, setAddingToCart] = useState({})
   const [liked, setLiked] = useState({})
   const [filters, setFilters] = useState({
     category: selectedCategory || 'all',
@@ -62,45 +63,43 @@ const cart = Object.values(cartObject);
   const brands = ['all', ...new Set(allProducts.map(p => p.brand))]
   const categories = ['all', ...new Set(allProducts.map(p => p.category))]
 
-  function handleAddToCartClick(p) {
-    setAddingToCart(prev => ({
-      ...prev,
-      [p.id]: true
-    }))
-    if (!quantities[p.id]) {
-      setQuantities(prev => ({
-        ...prev,
-        [p.id]: 1
-      }))
+  // 
+  
+  function increaseQty(product) {
+  const key = product.item_code
+  console.log("Current Product Code:", product.item_code)
+  setCart(prev => ({
+    ...prev,
+    [key]: {
+      item: product,
+      qty: (prev[key]?.qty || 0) + 1
     }
-  }
+  }))
+}
 
-  function handleIncreaseQty(p) {
-    setQuantities(prev => ({
-      ...prev,
-      [p.id]: (prev[p.id] || 1) + 1
-    }))
-  }
+function decreaseQty(product) {
+  const key = product.item_code
 
-  function handleDecreaseQty(p) {
-    setQuantities(prev => ({
-      ...prev,
-      [p.id]: Math.max(1, (prev[p.id] || 1) - 1)
-    }))
-  }
+  setCart(prev => {
+    const currentQty = prev[key]?.qty || 0
 
-  function handleConfirmAddToCart(p) {
-    const qty = quantities[p.id] || 1
-    onAddToCart(p, qty)
-    setAddingToCart(prev => ({
+    if (currentQty <= 1) {
+      // Remove completely
+      const updated = { ...prev }
+      delete updated[key]
+      return updated
+    }
+
+    return {
       ...prev,
-      [p.id]: false
-    }))
-    setQuantities(prev => ({
-      ...prev,
-      [p.id]: 1
-    }))
-  }
+      [key]: {
+        ...prev[key],
+        qty: currentQty - 1
+      }
+    }
+  })
+
+}
 
   function toggleLike(productId) {
     setLiked(prev => ({
@@ -207,7 +206,7 @@ const cart = Object.values(cartObject);
           </div>
           <nav className="header-actions">
             <button className="icon-btn">❤</button>
-            <button className="icon-btn" onClick={() => onNavigate('checkout')}>🛒 <span className="cart-count"></span></button>
+            <button className="icon-btn" onClick={() => goToCheckout()}>🛒 <span className="cart-count">{Object.values(cart).reduce((total, item) => total + item.qty, 0)}</span></button>
           </nav>
         </div>
       </header>
@@ -248,99 +247,43 @@ const cart = Object.values(cartObject);
           {/* Category Filter */}
           <div className="filter-group">
             <h4 className="filter-title">Categories</h4>
-            <select 
-              value={filters.category}
-              onChange={(e) => handleFilterChange('category', e.target.value)}
-              className="filter-select"
-            >
+            {/* Custom scrollable category list for better UX when there are many categories */}
+            <div className="filter-list" role="listbox" aria-label="Categories">
               {categories.map(cat => (
-                <option key={cat} value={cat}>
+                <button
+                  key={cat}
+                  className={`filter-item ${filters.category === cat ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('category', cat)}
+                  role="option"
+                  aria-selected={filters.category === cat}
+                >
                   {cat === 'all' ? 'All Categories' : cat}
-                </option>
+                </button>
               ))}
-            </select>
-          </div>
-
-          {/* Price Filter */}
-          <div className="filter-group">
-            <h4 className="filter-title">Price Range</h4>
-            <div className="price-inputs">
-              <div className="price-input-group">
-                <label>Min:</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="15"
-                  value={filters.priceRange[0]}
-                  onChange={(e) => handlePriceChange([parseFloat(e.target.value) || 0, filters.priceRange[1]])}
-                  className="price-input"
-                />
-              </div>
-              <div className="price-input-group">
-                <label>Max:</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="15"
-                  value={filters.priceRange[1]}
-                  onChange={(e) => handlePriceChange([filters.priceRange[0], parseFloat(e.target.value) || 15])}
-                  className="price-input"
-                />
-              </div>
-            </div>
-            <div className="price-display">
-              ${filters.priceRange[0].toFixed(2)} - ${filters.priceRange[1].toFixed(2)}
             </div>
           </div>
 
-          {/* Brand Filter */}
+          {/* Sort By (moved below Categories) */}
           <div className="filter-group">
-            <h4 className="filter-title">Brand</h4>
-            <select 
-              value={filters.brand}
-              onChange={(e) => handleFilterChange('brand', e.target.value)}
+            <h4 className="filter-title">Sort by</h4>
+            <select
+              id="sort-sidebar"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
               className="filter-select"
             >
-              <option value="all">All Brands</option>
-              {brands.slice(1).map(brand => (
-                <option key={brand} value={brand}>{brand}</option>
-              ))}
+              <option value="low_to_high">Price: Low to High</option>
+              <option value="high_to_low">Price: High to Low</option>
             </select>
           </div>
 
-          {/* Availability Filter */}
-          <div className="filter-group">
-            <h4 className="filter-title">Availability</h4>
-            <select 
-              value={filters.availability}
-              onChange={(e) => handleFilterChange('availability', e.target.value)}
-              className="filter-select"
-            >
-              <option value="all">All Products</option>
-              <option value="in-stock">In Stock</option>
-              <option value="low-stock">Low Stock</option>
-              <option value="out-of-stock">Out of Stock</option>
-            </select>
-          </div>
+          {/* Removed: Price Range, Brand, Availability filters per request */}
         </aside>
 
         <section className="products-main">
           <div className="products-top-bar">
             <div className="results-count">
               {totalCount} product{allProducts.length !== 1 ? 's' : ''} found
-            </div>
-            <div className="sort-section">
-              <label htmlFor="sort">Sort by: </label>
-              <select 
-                id="sort"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="sort-select"
-              >
-                <option value="low_to_high">Price: Low to High</option>
-                <option value="high_to_low">Price: High to Low</option>
-                {/* <option value="name">Name: A to Z</option> */}
-              </select>
             </div>
           </div>
 
@@ -373,21 +316,21 @@ const cart = Object.values(cartObject);
                       <button className="add-btn-full disabled-btn" disabled>
                         Out of Stock
                       </button>
-                    ) : !addingToCart[product.id] ? (
+                    ) : !cart[product.item_code] ? (
                       <button 
                         className="add-btn-full"
-                        onClick={() => handleAddToCartClick(product)}
+                        onClick={() => increaseQty(product)}
                       >
                         Add to Cart
                       </button>
                     ) : (
                       <div className="qty-selector-full">
-                        <button className="qty-btn-full minus" onClick={() => handleDecreaseQty(product)}>−</button>
+                        <button className="qty-btn-full minus" onClick={() => decreaseQty(product)}>−</button>
                         <div className="qty-display-full">
-                          <span className="qty-value-full">{quantities[product.id] || 1}</span>
+                          <span className="qty-value-full">{cart[product.item_code].qty}</span>
                         </div>
-                        <button className="qty-btn-full plus" onClick={() => handleIncreaseQty(product)}>+</button>
-                        <button className="confirm-add-btn-full" onClick={() => handleConfirmAddToCart(product)}>Add to Cart</button>
+                        <button className="qty-btn-full plus" onClick={() => increaseQty(product)}>+</button>
+                        {/* <button className="confirm-add-btn-full" onClick={() => handleConfirmAddToCart(product)}>Add to Cart</button> */}
                       </div>
                     )}
                   </div>

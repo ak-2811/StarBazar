@@ -18,7 +18,6 @@ const offers = location.state?.offers || [];
 const cart = Object.values(cartObject);
 
 
-
 // 🔥 Apply offer logic
 const updatedCart = cart.map(cartItem => {
 
@@ -26,18 +25,45 @@ const updatedCart = cart.map(cartItem => {
     offer => offer.item_code === cartItem.item.item_code
   );
 
-  if (rule && cartItem.qty >= rule.min_qty) {
+  const originalPrice = Number(cartItem.item.price);
+  const qty = cartItem.qty;
+
+  if (!rule) {
     return {
       ...cartItem,
-      final_price: rule.offer_price,
-      is_discounted: true
+      final_price: originalPrice,
+      subtotal: originalPrice * qty,
+      is_discounted: false
     };
   }
 
+  const minQty = Number(rule.min_qty);
+  const offerUnitPrice = Number(rule.price);
+
+  if (qty < minQty) {
+    return {
+      ...cartItem,
+      final_price: originalPrice,
+      subtotal: originalPrice * qty,
+      is_discounted: false
+    };
+  }
+
+  // 🔥 Bundle logic
+  const bundles = Math.floor(qty / minQty);
+  const remaining = qty % minQty;
+
+  const bundlePrice = offerUnitPrice * minQty;
+
+  const total =
+    (bundles * bundlePrice) +
+    (remaining * originalPrice);
+
   return {
     ...cartItem,
-    final_price: cartItem.item.price,
-    is_discounted: false
+    final_price: total / qty,   // average per item for UI
+    subtotal: total,
+    is_discounted: true
   };
 });
 
@@ -49,13 +75,13 @@ const cartItems = updatedCart.map(item => ({
   unit: item.item.unit,
   price: item.final_price,
   quantity: item.qty,
-  subtotal: item.final_price * item.qty,
+  subtotal: item.subtotal,
   original_price: item.item.price,
   is_discounted: item.is_discounted
 }));
 // Totals
 const subtotal = updatedCart.reduce(
-  (sum, item) => sum + (item.final_price * item.qty),
+  (sum, item) => sum + item.subtotal,
   0
 );
 
