@@ -10,6 +10,8 @@ function Products({ selectedCategory = null, onNavigate }) {
 const [allProducts, setAllProducts] = useState([])
 
 const navigate=useNavigate();
+  // small helper to go to wishlist
+  const goToWishlist = () => navigate('/wishlist')
 // const cartObject = location.state?.cart || {};
 // const offers = location.state?.offers || [];
 
@@ -192,7 +194,7 @@ function decreaseQty(product) {
   return (
     <div className="site-root">
       <header className="site-header">
-        <div className="header-inner">
+          <div className="header-inner">
           <div className="brand" onClick={() => onNavigate && onNavigate('home')}>
             <div className="logo-mark">🌿</div>
             <div className="brand-name">StarBazar</div>
@@ -205,7 +207,7 @@ function decreaseQty(product) {
             />
           </div>
           <nav className="header-actions">
-            <button className="icon-btn">❤</button>
+            <button className="icon-btn" onClick={goToWishlist}>❤</button>
             <button className="icon-btn" onClick={() => goToCheckout()}>🛒 <span className="cart-count">{Object.values(cart).reduce((total, item) => total + item.qty, 0)}</span></button>
           </nav>
         </div>

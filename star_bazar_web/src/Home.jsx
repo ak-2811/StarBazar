@@ -68,6 +68,27 @@ const goToCheckout = () => {
   });
 };
 
+  // Local wishlist state (keeps track of liked / wishlisted products)
+  const [liked, setLiked] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('liked')) || {}
+    } catch (e) {
+      return {}
+    }
+  })
+
+  function toggleLike(productId) {
+    setLiked(prev => {
+      const next = { ...prev, [productId]: !prev[productId] }
+      try {
+        localStorage.setItem('liked', JSON.stringify(next))
+      } catch (e) {
+        // ignore storage errors
+      }
+      return next
+    })
+  }
+
 function increaseQty(p) {
   const key = p.item_code
   console.log("Current Product Code:", p.item_code)
@@ -116,7 +137,7 @@ function decreaseQty(p) {
             <input placeholder="Search for products..." />
           </div> */}
           <nav className="header-actions">
-            <button className="icon-btn">❤</button>
+            <button className="icon-btn" onClick={() => navigate('/wishlist')}>❤</button>
             <button className="icon-btn" onClick={() => goToCheckout()}>🛒 <span className="cart-count">{Object.values(cart).reduce((total, item) => total + item.qty, 0)}</span></button>
           </nav>
         </div>
@@ -141,6 +162,14 @@ function decreaseQty(p) {
           <div className="seller-list">
             {bestSellers.map(p => (
               <article key={p.item_code} className="product-card small">
+                <button
+                  type="button"
+                  className={`heart-btn ${liked[p.item_code] ? 'liked' : ''}`}
+                  onClick={(e) => { e.stopPropagation(); toggleLike(p.item_code) }}
+                  title={liked[p.item_code] ? 'Remove from wishlist' : 'Add to wishlist'}
+                >
+                  {liked[p.item_code] ? '❤' : '🤍'}
+                </button>
                 <div className="product-img">
                   {p.image ? <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} /> : p.emoji}
                 </div>
@@ -172,6 +201,14 @@ function decreaseQty(p) {
           <div className="offers-grid">
             {specialOffers.map(p => (
               <article key={p.item_code} className="offer-card">
+                <button
+                  type="button"
+                  className={`heart-btn ${liked[p.item_code] ? 'liked' : ''}`}
+                  onClick={(e) => { e.stopPropagation(); toggleLike(p.item_code) }}
+                  title={liked[p.item_code] ? 'Remove from wishlist' : 'Add to wishlist'}
+                >
+                  {liked[p.item_code] ? '❤' : '🤍'}
+                </button>
                 <div className="offer-badge">Special Deal</div>
                 <div className="offer-img">{p.image ? <img src={`http://groceryv15.localhost:8001${p.image}`} alt={p.item_code} /> : p.emoji}</div>
                 <div className="offer-body">
@@ -205,6 +242,14 @@ function decreaseQty(p) {
           <div className="grid">
             {shopallProducts.map(p => (
               <article key={p.item_code} className="product-card">
+                <button
+                  type="button"
+                  className={`heart-btn ${liked[p.item_code] ? 'liked' : ''}`}
+                  onClick={(e) => { e.stopPropagation(); toggleLike(p.item_code) }}
+                  title={liked[p.item_code] ? 'Remove from wishlist' : 'Add to wishlist'}
+                >
+                  {liked[p.item_code] ? '❤' : '🤍'}
+                </button>
                 <div className="product-img large">{p.image ? <img src={`http://groceryv15.localhost:8001${p.image}`} alt={p.item_code} /> : p.emoji}</div>
                 <div className="product-body">
                   <div className="product-name">{p.item_name}</div>
