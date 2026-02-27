@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import React from 'react'
 import './Checkout.css'
 import { useLocation } from "react-router-dom";
@@ -9,9 +9,20 @@ function Checkout({ onNavigate, onRemoveFromCart, onClearCart }) {
   const location = useLocation();
   const navigate= useNavigate();
 
-// Get cart object from Home
-// const cartObject = location.state?.cart || {};
-const cartObject = JSON.parse(localStorage.getItem("cart")) || {};
+// Get cart object from localStorage and keep it in state so UI updates when qty changes
+const [cartObject, setCartObject] = useState(() => JSON.parse(localStorage.getItem("cart")) || {});
+// keep localStorage in sync if other tabs modify it
+useEffect(() => {
+  const handler = () => {
+    try {
+      setCartObject(JSON.parse(localStorage.getItem('cart')) || {});
+    } catch (e) {
+      setCartObject({});
+    }
+  }
+  window.addEventListener('storage', handler)
+  return () => window.removeEventListener('storage', handler)
+}, [])
 const offers = location.state?.offers || [];
 
 // Convert object → array (REAL cart)
@@ -91,15 +102,46 @@ const total = subtotal + shippingCost + tax;
 
 // Logic to remove the item
 const handleRemoveItem = (itemCode) => {
-  const savedCart = JSON.parse(localStorage.getItem("cart")) || {};
-
-  delete savedCart[itemCode];
-
-  localStorage.setItem("cart", JSON.stringify(savedCart));
-
-  // Refresh page state
-  navigate(0);
+  setCartObject(prev => {
+    const next = { ...prev }
+    delete next[itemCode]
+    try { localStorage.setItem('cart', JSON.stringify(next)) } catch (e) {}
+    return next
+  })
 };
+
+// Increase / decrease quantity helpers (mirror Home.jsx behavior)
+function increaseQty(product) {
+  const key = product || product === 0 ? product : null
+  // product expected to be itemCode string
+  if (!key) return
+  setCartObject(prev => {
+    const next = { ...prev }
+    if (!next[key]) return prev
+    next[key] = {
+      ...next[key],
+      qty: (next[key].qty || 0) + 1
+    }
+    try { localStorage.setItem('cart', JSON.stringify(next)) } catch (e) {}
+    return next
+  })
+}
+
+function decreaseQty(product) {
+  const key = product || product === 0 ? product : null
+  if (!key) return
+  setCartObject(prev => {
+    const next = { ...prev }
+    const currentQty = next[key]?.qty || 0
+    if (currentQty <= 1) {
+      delete next[key]
+    } else {
+      next[key] = { ...next[key], qty: currentQty - 1 }
+    }
+    try { localStorage.setItem('cart', JSON.stringify(next)) } catch (e) {}
+    return next
+  })
+}
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -337,7 +379,15 @@ const handleRemoveItem = (itemCode) => {
                                 )}
                           </div>
                         </div>
-                        <div className="item-qty">x{item.quantity}</div>
+                        <div className="item-qty">
+                          <div className="qty-selector compact">
+                            <button className="qty-btn minus" onClick={() => decreaseQty(item.id)}>−</button>
+                            <div className="qty-display">
+                              <span className="qty-value">{item.quantity}</span>
+                            </div>
+                            <button className="qty-btn plus" onClick={() => increaseQty(item.id)}>+</button>
+                          </div>
+                        </div>
                         <div className="item-price">${item.subtotal.toFixed(2)}</div>
                         <button 
                           className="item-remove"

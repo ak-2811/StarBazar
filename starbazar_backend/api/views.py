@@ -5,13 +5,13 @@ import json
 from datetime import date, datetime
 
 
-FRAPPE_URL = "http://172.28.180.147:8001"
-API_KEY = "823008797018d0a"
-API_SECRET = "c3977b78a0e37d6"
+FRAPPE_URL = "http://192.168.29.249:8000/"
+API_KEY = "ba0e494a95160ad"
+API_SECRET = "4d101c355e2c8d3"
 
 HEADERS = {
     "Authorization": f"token {API_KEY}:{API_SECRET}",
-    "Host": "groceryv15.localhost"
+    "Host": "sstore"
 }
 
 # @api_view(['GET'])
