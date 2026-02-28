@@ -7,57 +7,112 @@ function Wishlist() {
   const [likedMap, setLikedMap] = useState({})
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
+  const[specialOffers,setSpecialOffers]=useState([])
   const navigate = useNavigate()
 
+  // Getting the offer products
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('liked')) || {}
-      setLikedMap(saved)
-    } catch (e) {
-      setLikedMap({})
+  axios.get("http://localhost:8000/api/pricing-offers/")
+    .then(res => {
+      setSpecialOffers(res.data)
+    })
+    .catch(err => {
+      console.error("Error fetching best sellers:", err)
+    })
+}, [])
+
+  useEffect(() => {
+  const saved = JSON.parse(localStorage.getItem('liked')) || {}
+  setLikedMap(saved)
+}, [])
+
+useEffect(() => {
+  const saved = JSON.parse(localStorage.getItem('liked')) || {}
+  const likedCodes = Object.keys(saved).filter(k => saved[k])
+
+  if (likedCodes.length === 0) {
+    setProducts([])
+    setLoading(false)
+    return
+  }
+
+  setLoading(true)
+
+  axios.post("http://localhost:8000/api/wishlist-products/", {
+      item_codes: likedCodes
+  })
+  .then(res => {
+      setProducts(res.data.products)
+  })
+  .catch(err => console.error(err))
+  .finally(() => setLoading(false))
+
+}, [likedMap])
+
+// For add to cart and adding qtys
+const [cart, setCart] = useState(
+  JSON.parse(localStorage.getItem("cart")) || {}
+)
+// console.log("Cart Keys:", Object.keys(cart))
+
+useEffect(() => {
+  localStorage.setItem("cart", JSON.stringify(cart))
+}, [cart])
+
+const goToCheckout = () => {
+  navigate("/checkout", {
+    state: {
+      offers: specialOffers
     }
-  }, [])
+  });
+};
 
-  useEffect(() => {
-    // Fetch all products for matching item_code -> product details
-    // We'll call the same API used elsewhere. If paginated, request a large page_size to get all.
-    setLoading(true)
-    axios.get('http://localhost:8000/api/all-products/', { params: { page: 1, page_size: 1000 } })
-      .then(res => {
-        const formatted = res.data.products.map((item, index) => ({
-          id: index + 1,
-          item_code: item.item_code,
-          name: item.item_name,
-          price: parseFloat(item.price),
-          unit: `/ ${item.unit}`,
-          category: item.category || 'General',
-          brand: null,
-          image: item.image,
-          stock: item.stock,
-          availability: item.stock > 0 ? 'in-stock' : 'out-of-stock'
-        }))
+function increaseQty(p) {
+  const key = p.item_code
+  console.log("Current Product Code:", p.item_code)
+  setCart(prev => ({
+    ...prev,
+    [key]: {
+      item: p,
+      qty: (prev[key]?.qty || 0) + 1
+    }
+  }))
+}
 
-        // Filter to only liked products
-        const likedCodes = Object.keys(likedMap).filter(k => likedMap[k])
-        const likedProducts = formatted.filter(p => likedCodes.includes(p.item_code))
-        setProducts(likedProducts)
-      })
-      .catch(err => {
-        console.error('Error fetching products for wishlist', err)
-      })
-      .finally(() => setLoading(false))
-  }, [likedMap])
+function decreaseQty(p) {
+  const key = p.item_code
 
-  function toggleLike(code) {
+  setCart(prev => {
+    const currentQty = prev[key]?.qty || 0
+
+    if (currentQty <= 1) {
+      // Remove completely
+      const updated = { ...prev }
+      delete updated[key]
+      return updated
+    }
+
+    return {
+      ...prev,
+      [key]: {
+        ...prev[key],
+        qty: currentQty - 1
+      }
+    }
+  })
+
+}
+
+function toggleLike(code) {
     setLikedMap(prev => {
-      const next = { ...prev, [code]: !prev[code] }
-      try { localStorage.setItem('liked', JSON.stringify(next)) } catch (e) {}
-      return next
+        const next = { ...prev, [code]: !prev[code] }
+        try { localStorage.setItem('liked', JSON.stringify(next)) } catch (e) {console.log(e)}
+        return next
     })
 
-    // remove from products state immediately for snappy UI
-    setProducts(prev => prev.filter(p => p.item_code !== code))
-  }
+// remove from products state immediately for snappy UI
+setProducts(prev => prev.filter(p => p.item_code !== code))
+}
 
   return (
     <div className="site-root">
@@ -69,7 +124,7 @@ function Wishlist() {
           </div>
           <nav className="header-actions">
             <button className="icon-btn" onClick={() => navigate('/wishlist')}>❤</button>
-            <button className="icon-btn" onClick={() => navigate('/checkout')}>🛒</button>
+            <button className="icon-btn" onClick={() => goToCheckout()}>🛒 <span className="cart-count">{Object.values(cart).reduce((total, item) => total + item.qty, 0)}</span></button>
           </nav>
         </div>
       </header>
@@ -78,46 +133,69 @@ function Wishlist() {
         <section className="best-sellers">
           <h3>Your Wishlist</h3>
 
-          {loading ? (
+                    {loading ? (
             <p>Loading...</p>
-          ) : products.length === 0 ? (
+            ) : products.length === 0 ? (
             <div className="no-products">
-              <p>Your wishlist is empty. Add products by tapping the heart on product cards.</p>
+                <p>Your wishlist is empty. Add products by tapping the heart on product cards.</p>
             </div>
-          ) : (
+            ) : (
             <div className="grid">
-              {products.map(p => (
+                {products.map(p => (
                 <article key={p.item_code} className="product-card">
-                  <button
+                    <button
                     type="button"
                     className={`heart-btn ${likedMap[p.item_code] ? 'liked' : ''}`}
                     onClick={(e) => { e.stopPropagation(); toggleLike(p.item_code) }}
                     title={likedMap[p.item_code] ? 'Remove from wishlist' : 'Add to wishlist'}
-                  >
+                    >
                     {likedMap[p.item_code] ? '❤' : '🤍'}
-                  </button>
+                    </button>
 
-                  <div className="product-img large">{p.image ? <img src={`http://192.168.29.249:8000/${p.image}`} alt={p.item_code} /> : '🛍️'}</div>
-                  <div className="product-body">
-                    <div className="product-name">{p.name}</div>
-                    <div className="product-price">${p.price.toFixed(2)} <span className="unit">{p.unit}</span></div>
-                    {p.availability === 'out-of-stock' ? (
-                      <button className="add-btn disabled-btn" disabled>Out of Stock</button>
+                    <div className="product-img large">
+                    {p.image ? (
+                        <img
+                        src={`http://groceryv15.localhost:8001/${p.image}`}
+                        alt={p.item_code}
+                        />
                     ) : (
-                      <button className="add-btn" onClick={() => {
-                        // simple add to cart behavior
-                        const cart = JSON.parse(localStorage.getItem('cart')) || {}
-                        cart[p.item_code] = { item: p, qty: (cart[p.item_code]?.qty || 0) + 1 }
-                        localStorage.setItem('cart', JSON.stringify(cart))
-                        // navigate to checkout or give feedback
-                        alert('Added to cart')
-                      }}>Add to Cart</button>
+                        '🛍️'
                     )}
-                  </div>
+                    </div>
+
+                    <div className="product-body">
+                    <div className="product-name">{p.item_name}</div>
+
+                    <div className="product-price">
+                        ${p.price.toFixed(2)} <span className="unit">{p.unit}</span>
+                    </div>
+
+                    {p.availability === 'out-of-stock' ? (
+                        <button className="add-btn disabled-btn" disabled>
+                        Out of Stock
+                        </button>
+                    ) : cart[p.item_code] ? (
+                        <div className="qty-selector">
+                        <button className="qty-btn minus" onClick={() => decreaseQty(p)}>−</button>
+
+                        <div className="qty-display">
+                            <span className="qty-value">
+                            {cart[p.item_code]?.qty || 0}
+                            </span>
+                        </div>
+
+                        <button className="qty-btn plus" onClick={() => increaseQty(p)}>+</button>
+                        </div>
+                    ) : (
+                        <button className="add-btn" onClick={() => increaseQty(p)}>
+                        Add to Cart
+                        </button>
+                    )}
+                    </div>
                 </article>
-              ))}
+                ))}
             </div>
-          )}
+            )}
         </section>
       </main>
 

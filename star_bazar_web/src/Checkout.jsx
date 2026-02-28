@@ -4,7 +4,7 @@ import './Checkout.css'
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 
-function Checkout({ onNavigate, onRemoveFromCart, onClearCart }) {
+function Checkout({ onNavigate, onClearCart }) {
 
   const location = useLocation();
   const navigate= useNavigate();
@@ -18,6 +18,7 @@ useEffect(() => {
       setCartObject(JSON.parse(localStorage.getItem('cart')) || {});
     } catch (e) {
       setCartObject({});
+      console.log(e)
     }
   }
   window.addEventListener('storage', handler)
@@ -105,7 +106,8 @@ const handleRemoveItem = (itemCode) => {
   setCartObject(prev => {
     const next = { ...prev }
     delete next[itemCode]
-    try { localStorage.setItem('cart', JSON.stringify(next)) } catch (e) {}
+    // try { localStorage.setItem('cart', JSON.stringify(next)) } catch (e) {}
+    try { localStorage.setItem('cart', JSON.stringify(next)) } catch (e) {console.log(e)}
     return next
   })
 };
@@ -122,7 +124,7 @@ function increaseQty(product) {
       ...next[key],
       qty: (next[key].qty || 0) + 1
     }
-    try { localStorage.setItem('cart', JSON.stringify(next)) } catch (e) {}
+    try { localStorage.setItem('cart', JSON.stringify(next)) } catch (e) {console.log(e)}
     return next
   })
 }
@@ -138,7 +140,7 @@ function decreaseQty(product) {
     } else {
       next[key] = { ...next[key], qty: currentQty - 1 }
     }
-    try { localStorage.setItem('cart', JSON.stringify(next)) } catch (e) {}
+    try { localStorage.setItem('cart', JSON.stringify(next)) } catch (e) {console.log(e)}
     return next
   })
 }

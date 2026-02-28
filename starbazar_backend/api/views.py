@@ -14,99 +14,6 @@ HEADERS = {
     "Host": "sstore"
 }
 
-# @api_view(['GET'])
-# def all_products(request):
-
-#     page = int(request.GET.get("page", 1))
-#     page_size = 12
-#     category = request.GET.get("category")
-#     search = request.GET.get("search")
-#     min_price = request.GET.get("min_price")
-#     max_price = request.GET.get("max_price")
-
-#     filters = []
-
-#     if category and category != "all":
-#         filters.append(["item_group", "=", category])
-
-#     if search:
-#         filters.append(["item_name", "like", f"%{search}%"])
-
-#     # 🔥 Fetch ONLY 24 random items from filtered dataset
-#     items_url = (
-#         f"{FRAPPE_URL}/api/resource/Item?"
-#         f'fields=["name","item_name","image","stock_uom","item_group"]'
-#         f"&limit_page_length=24"
-#         f"&order_by=RAND()"
-#     )
-
-#     if filters:
-#         items_url += f"&filters={json.dumps(filters)}"
-
-#     items_response = requests.get(items_url, headers=HEADERS).json()
-#     items_data = items_response.get("data", [])
-
-#     total_count = len(items_data)  # max 24
-
-#     # 🔥 Pagination inside those 24
-#     start = (page - 1) * page_size
-#     end = start + page_size
-#     items_page = items_data[start:end]
-
-#     final_data = []
-
-#     for item in items_page:
-
-#         # Fetch latest selling price
-#         price_url = (
-#             f"{FRAPPE_URL}/api/resource/Item%20Price?"
-#             f'filters=[["item_code","=","{item["name"]}"],'
-#             f'["price_list","=","Standard Selling"]]'
-#             f'&fields=["price_list_rate"]'
-#             f'&limit_page_length=1'
-#             f'&order_by=creation desc'
-#         )
-
-#         price_res = requests.get(price_url, headers=HEADERS).json()
-#         price_data = price_res.get("data", [])
-#         price = price_data[0]["price_list_rate"] if price_data else 0
-
-#         # Apply price filter safely
-#         if min_price and float(price) < float(min_price):
-#             continue
-#         if max_price and float(price) > float(max_price):
-#             continue
-
-#         # Fetch latest stock
-#         stock_url = (
-#             f"{FRAPPE_URL}/api/resource/Stock%20Ledger%20Entry?"
-#             f'filters=[["item_code","=","{item["name"]}"]]'
-#             f'&fields=["qty_after_transaction"]'
-#             f'&limit_page_length=1'
-#             f'&order_by=posting_date desc, posting_time desc'
-#         )
-
-#         stock_res = requests.get(stock_url, headers=HEADERS).json()
-#         stock_data = stock_res.get("data", [])
-#         stock = stock_data[0]["qty_after_transaction"] if stock_data else 0
-
-#         final_data.append({
-#             "item_code": item["name"],
-#             "item_name": item["item_name"],
-#             "image": item["image"],
-#             "unit": item["stock_uom"],
-#             "price": price,
-#             "category": item["item_group"],
-#             "brand": None,
-#             "stock": stock
-#         })
-
-#     return Response({
-#         "products": final_data,
-#         "total_count": total_count,
-#         "page": page,
-#         "page_size": page_size
-#     })
 
 @api_view(['GET'])
 def all_products(request):
@@ -200,7 +107,7 @@ def all_products(request):
     bin_url = (
         f"{FRAPPE_URL}/api/resource/Bin?"
         f'filters=[["item_code","in",{item_codes_json}],'
-        # f'["warehouse","=","Stores - A"]]'
+        f'["warehouse","=","Stores - A"]]'
         f'&fields=["item_code","actual_qty"]'
     )
 
@@ -208,22 +115,6 @@ def all_products(request):
     bin_data = bin_response.get("data", [])
 
     bin_map = {d["item_code"]: float(d["actual_qty"] or 0) for d in bin_data}
-
-
-    # 2️⃣ Get pending POS sold qty (today, not yet closed)
-    # pending_sql = """
-    # SELECT pli.item_code as item_code,
-    #     SUM(pli.qty) as sold_qty
-    # FROM `tabPOS Invoice` pi
-    # JOIN `tabPacked Item` pli
-    #     ON pli.parent = pi.name
-    # WHERE
-    #     pi.docstatus = 1
-    #     AND pi.status = 'Paid'
-    #     AND pi.is_return = 0
-    #     AND pi.posting_date = CURDATE()
-    # GROUP BY pli.item_code
-    # """
 
     pending_url = f"{FRAPPE_URL}/api/method/star_bazar.star_bazar.api.stock.get_pending_pos_qty"
     print("ITEM CODES SENT:", item_codes)
@@ -293,16 +184,52 @@ def all_products(request):
     end = start + page_size
     items_page = items_data[start:end]
 
+    # 4️⃣ Get back-side image from File doctype
+    file_url = (
+        f"{FRAPPE_URL}/api/resource/File?"
+        f'filters=[["File","attached_to_doctype","=","Item"],'
+        f'["File","attached_to_name","in",{item_codes_json}]]'
+        f'&fields=["attached_to_name","file_url"]'
+    )
+
+    file_response = requests.get(file_url, headers=HEADERS).json()
+    file_data = file_response.get("data", [])
+
+    # Map item_code -> back image
+    back_image_map = {}
+
+    for f in file_data:
+        item_code = f["attached_to_name"]
+        file_url = f["file_url"]
+
+        # Ignore DP image if needed (optional filtering logic)
+        if item_code not in back_image_map:
+            back_image_map[item_code] = file_url
+
     # 🔥 6️⃣ Merge everything
     final_data = []
 
     print("DEBUG STOCK MAP:", stock_map.get("MILK"))
 
     for item in items_page:
+        item_code = item["name"]
+        main_image = item.get("image")
+
+        back_image = None
+
+        # Find attachment that is NOT the main image
+        for f in file_data:
+            if (
+                f["attached_to_name"] == item_code and
+                f["file_url"] != main_image
+            ):
+                back_image = f["file_url"]
+                break
         final_data.append({
             "item_code": item["name"],
             "item_name": item["item_name"],
             "image": item["image"],
+            "back_image":back_image,
             "unit": item["stock_uom"],
             "price": price_map.get(item["name"], 0),
             "category": item["item_group"],
@@ -316,6 +243,156 @@ def all_products(request):
         "page": page,
         "page_size": page_size
     })
+
+
+@api_view(['POST'])
+def wishlist_products(request):
+
+    item_codes = request.data.get("item_codes", [])
+    availability = request.data.get("availability", "all")
+
+    if not item_codes:
+        return Response([])
+
+    item_codes_json = json.dumps(item_codes)
+
+    # 1️⃣ Fetch Item basic info
+    items_url = (
+        f"{FRAPPE_URL}/api/resource/Item?"
+        f'filters=[["Item","name","in",{item_codes_json}]]'
+        f'&fields=["name","item_name","image","stock_uom"]'
+    )
+
+    items_response = requests.get(items_url, headers=HEADERS).json()
+    items_data = items_response.get("data", [])
+
+    if not items_data:
+        return Response([])
+
+    # 2️⃣ Fetch latest price
+    price_url = (
+        f"{FRAPPE_URL}/api/resource/Item%20Price?"
+        f'filters=[["Item Price","item_code","in",{item_codes_json}],'
+        f'["Item Price","price_list","=","Standard Selling"]]'
+        f'&fields=["item_code","price_list_rate","creation"]'
+        f'&order_by=creation desc'
+    )
+
+    price_response = requests.get(price_url, headers=HEADERS).json()
+    price_data = price_response.get("data", [])
+
+    price_map = {}
+    for price in price_data:
+        if price["item_code"] not in price_map:
+            price_map[price["item_code"]] = price["price_list_rate"]
+
+    # 3️⃣ Get base stock from Bin (Stores - A)
+    bin_url = (
+        f"{FRAPPE_URL}/api/resource/Bin?"
+        f'filters=[["item_code","in",{item_codes_json}],'
+        f'["warehouse","=","Stores - A"]]'
+        f'&fields=["item_code","actual_qty"]'
+    )
+
+    bin_response = requests.get(bin_url, headers=HEADERS).json()
+    bin_data = bin_response.get("data", [])
+
+    bin_map = {d["item_code"]: float(d["actual_qty"] or 0) for d in bin_data}
+
+    # 4️⃣ Get pending POS sold qty
+    pending_url = f"{FRAPPE_URL}/api/method/star_bazar.star_bazar.api.stock.get_pending_pos_qty"
+
+    pending_response = requests.post(
+        pending_url,
+        headers=HEADERS,
+        json={"item_codes": item_codes}
+    ).json()
+
+    pending_rows = pending_response.get("message", [])
+
+    pending_map = {}
+    for row in pending_rows:
+        item_code = row.get("item_code")
+        sold_qty = float(row.get("sold_qty") or 0)
+        pending_map[item_code] = sold_qty
+
+    # 5️⃣ Final stock calculation
+    stock_map = {}
+
+    for code in item_codes:
+        base = bin_map.get(code, 0)
+        sold = pending_map.get(code, 0)
+        available = base - sold
+        stock_map[code] = max(available, 0)
+
+    # 6️⃣ Apply availability filter
+    if availability == "in-stock":
+        items_data = [
+            item for item in items_data
+            if stock_map.get(item["name"], 0) > 0
+        ]
+
+    elif availability == "out-of-stock":
+        items_data = [
+            item for item in items_data
+            if stock_map.get(item["name"], 0) <= 0
+        ]
+    
+    # 4️⃣ Get back-side image from File doctype
+    file_url = (
+        f"{FRAPPE_URL}/api/resource/File?"
+        f'filters=[["File","attached_to_doctype","=","Item"],'
+        f'["File","attached_to_name","in",{item_codes_json}]]'
+        f'&fields=["attached_to_name","file_url"]'
+    )
+
+    file_response = requests.get(file_url, headers=HEADERS).json()
+    file_data = file_response.get("data", [])
+
+    # Map item_code -> back image
+    back_image_map = {}
+
+    for f in file_data:
+        item_code = f["attached_to_name"]
+        file_url = f["file_url"]
+
+        # Ignore DP image if needed (optional filtering logic)
+        if item_code not in back_image_map:
+            back_image_map[item_code] = file_url
+
+    # 7️⃣ Merge everything
+    final_data = []
+
+    for item in items_data:
+        code = item["name"]
+        stock_qty = stock_map.get(code, 0)
+        item_code = item["name"]
+        main_image = item.get("image")
+
+        back_image = None
+
+        # Find attachment that is NOT the main image
+        for f in file_data:
+            if (
+                f["attached_to_name"] == item_code and
+                f["file_url"] != main_image
+            ):
+                back_image = f["file_url"]
+                break
+
+        final_data.append({
+            "item_code": code,
+            "item_name": item["item_name"],
+            "image": item["image"],
+            "back_image": back_image,
+            "unit": item["stock_uom"],
+            "price": price_map.get(code, 0),
+            "stock": stock_qty,
+            "availability": "in-stock" if stock_qty > 0 else "out-of-stock"
+        })
+
+    return Response({"products": final_data})
+
 
 @api_view(['GET'])
 def best_sellers(request):
@@ -359,19 +436,56 @@ def best_sellers(request):
     for price in price_data:
         if price["item_code"] not in price_map:
             price_map[price["item_code"]] = price["price_list_rate"]
+    
+    # 4️⃣ Get back-side image from File doctype
+    file_url = (
+        f"{FRAPPE_URL}/api/resource/File?"
+        f'filters=[["File","attached_to_doctype","=","Item"],'
+        f'["File","attached_to_name","in",{item_codes_json}]]'
+        f'&fields=["attached_to_name","file_url"]'
+    )
+
+    file_response = requests.get(file_url, headers=HEADERS).json()
+    file_data = file_response.get("data", [])
+
+    # Map item_code -> back image
+    back_image_map = {}
+
+    for f in file_data:
+        item_code = f["attached_to_name"]
+        file_url = f["file_url"]
+
+        # Ignore DP image if needed (optional filtering logic)
+        if item_code not in back_image_map:
+            back_image_map[item_code] = file_url
 
     # Merge item + price
     final_data = []
     for item in items_data:
+        item_code = item["name"]
+        main_image = item.get("image")
+
+        back_image = None
+
+        # Find attachment that is NOT the main image
+        for f in file_data:
+            if (
+                f["attached_to_name"] == item_code and
+                f["file_url"] != main_image
+            ):
+                back_image = f["file_url"]
+                break
         final_data.append({
-            "item_code": item["name"],
-            "item_name": item["item_name"],
-            "image": item["image"],
-            "unit": item["stock_uom"],
-            "price": price_map.get(item["name"], 0)
-        })
+        "item_code": item["name"],
+        "item_name": item["item_name"],
+        "image": item["image"],
+        "back_image": back_image,
+        "unit": item["stock_uom"],
+        "price": price_map.get(item["name"], 0)
+    })
 
     return Response(final_data)
+
 
 @api_view(['GET'])
 def shop_all_product(request):
@@ -416,18 +530,55 @@ def shop_all_product(request):
         if price["item_code"] not in price_map:
             price_map[price["item_code"]] = price["price_list_rate"]
 
+    # Get back-side image from File doctype
+    file_url = (
+        f"{FRAPPE_URL}/api/resource/File?"
+        f'filters=[["File","attached_to_doctype","=","Item"],'
+        f'["File","attached_to_name","in",{item_codes_json}]]'
+        f'&fields=["attached_to_name","file_url"]'
+    )
+
+    file_response = requests.get(file_url, headers=HEADERS).json()
+    file_data = file_response.get("data", [])
+
+    # Map item_code -> back image
+    back_image_map = {}
+
+    for f in file_data:
+        item_code = f["attached_to_name"]
+        file_url = f["file_url"]
+
+        # Ignore DP image if needed (optional filtering logic)
+        if item_code not in back_image_map:
+            back_image_map[item_code] = file_url
+
     # Merge item + price
     final_data = []
     for item in items_data:
+        item_code = item["name"]
+        main_image = item.get("image")
+
+        back_image = None
+
+        # Find attachment that is NOT the main image
+        for f in file_data:
+            if (
+                f["attached_to_name"] == item_code and
+                f["file_url"] != main_image
+            ):
+                back_image = f["file_url"]
+                break
         final_data.append({
             "item_code": item["name"],
             "item_name": item["item_name"],
             "image": item["image"],
+            "back_image": back_image,
             "unit": item["stock_uom"],
             "price": price_map.get(item["name"], 0)
         })
 
     return Response(final_data)
+
 
 @api_view(['GET'])
 def pricing_offers(request):
@@ -524,4 +675,5 @@ def pricing_offers(request):
         })
 
     return Response(final_data)
+
 

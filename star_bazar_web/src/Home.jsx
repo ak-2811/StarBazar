@@ -9,7 +9,18 @@ function Home() {
   const [bestSellers, setBestSellers] = useState([])
   const [shopallProducts,setShopAllProducts]=useState([])
   const [specialOffers,setSpecialOffers]=useState([])
+  const [selectedNutrition, setSelectedNutrition] = useState(null)
   const navigate = useNavigate();
+
+  // Nutrition block open and close 
+  function openNutrition(e, product) {
+  e.stopPropagation()
+  setSelectedNutrition(product)
+}
+
+  function closeNutritionModal() {
+    setSelectedNutrition(null)
+  }
 
   // Getting Best Seller Products
   useEffect(() => {
@@ -33,6 +44,7 @@ function Home() {
     })
 }, [])
 
+// Getting the offer products
   useEffect(() => {
   axios.get("http://localhost:8000/api/pricing-offers/")
     .then(res => {
@@ -54,7 +66,7 @@ function Home() {
 const [cart, setCart] = useState(
   JSON.parse(localStorage.getItem("cart")) || {}
 )
-console.log("Cart Keys:", Object.keys(cart))
+// console.log("Cart Keys:", Object.keys(cart))
 
 useEffect(() => {
   localStorage.setItem("cart", JSON.stringify(cart))
@@ -84,6 +96,7 @@ const goToCheckout = () => {
         localStorage.setItem('liked', JSON.stringify(next))
       } catch (e) {
         // ignore storage errors
+        console.log(e)
       }
       return next
     })
@@ -170,10 +183,31 @@ function decreaseQty(p) {
                 >
                   {liked[p.item_code] ? '❤' : '🤍'}
                 </button>
-                <div className="product-img">
+                {/* <div className="product-img">
                   {p.image ? <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} /> : p.emoji}
-                </div>
-                <div className="product-body">
+                </div> */}
+                 <div className="product-img-container large">
+                    <div className="product-img-front">
+                      <div className="product-img">
+                        {p.image ? (
+                          <img src={`http://groceryv15.localhost:8001${p.image}`} alt={p.item_code} />
+                        ) : (
+                          p.emoji
+                        )}
+                      </div>
+
+                      {p.back_image && (
+                        <button
+                          className="info-btn"
+                          onClick={(e) => openNutrition(e, p)}
+                          title="More Info"
+                        >
+                          <i>i</i>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="product-body">
                   <div className="product-name">{p.item_name}</div>
                   <div className="product-price">${p.price.toFixed(2)} <span className="unit">/ {p.unit}</span></div>
                   {cart[p.item_code] ? (
@@ -195,7 +229,30 @@ function decreaseQty(p) {
             ))}
           </div>
         </section>
+        {selectedNutrition && (
+            <div className="nutrition-modal-overlay" onClick={closeNutritionModal}>
+              <div
+                className="nutrition-modal-content"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="nutrition-modal-header">
+                  <h2>{selectedNutrition.item_name} Info</h2>
+                  <button className="close-modal-btn" onClick={closeNutritionModal}>×</button>
+                </div>
 
+                <div className="nutrition-modal-body">
+                  <img
+                    src={`http://groceryv15.localhost:8001${selectedNutrition.back_image}`}
+                    alt="Back Side"
+                  />
+                </div>
+
+                <div className="nutrition-modal-footer">
+                  <button className="done-btn" onClick={closeNutritionModal}>Done</button>
+                </div>
+              </div>
+            </div>
+          )}
         <section className="offers-section">
           <h3>🎉 Special Offers</h3>
           <div className="offers-grid">
@@ -250,7 +307,28 @@ function decreaseQty(p) {
                 >
                   {liked[p.item_code] ? '❤' : '🤍'}
                 </button>
-                <div className="product-img large">{p.image ? <img src={`http://groceryv15.localhost:8001${p.image}`} alt={p.item_code} /> : p.emoji}</div>
+                {/* <div className="product-img large">{p.image ? <img src={`http://groceryv15.localhost:8001${p.image}`} alt={p.item_code} /> : p.emoji}</div> */}
+                <div className="product-img-container large">
+                    <div className="product-img-front">
+                      <div className="product-img large">
+                        {p.image ? (
+                          <img src={`http://groceryv15.localhost:8001${p.image}`} alt={p.item_code} />
+                        ) : (
+                          p.emoji
+                        )}
+                      </div>
+
+                      {p.back_image && (
+                        <button
+                          className="info-btn"
+                          onClick={(e) => openNutrition(e, p)}
+                          title="More Info"
+                        >
+                          <i>i</i>
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 <div className="product-body">
                   <div className="product-name">{p.item_name}</div>
                   <div className="product-price">${p.price.toFixed(2)} <span className="unit">/ {p.unit}</span></div>

@@ -11,7 +11,19 @@ const [allProducts, setAllProducts] = useState([])
 
 const navigate=useNavigate();
   // small helper to go to wishlist
-  const goToWishlist = () => navigate('/wishlist')
+const goToWishlist = () => navigate('/wishlist')
+const [selectedNutrition, setSelectedNutrition] = useState(null)
+
+// function to open and close the back image
+function openNutrition(e, product) {
+  e.stopPropagation()
+  setSelectedNutrition(product)
+}
+
+function closeNutritionModal() {
+  setSelectedNutrition(null)
+}
+
 // const cartObject = location.state?.cart || {};
 // const offers = location.state?.offers || [];
 
@@ -179,6 +191,7 @@ function decreaseQty(product) {
       category: item.category || "General",
       brand: null,
       image: item.image,
+      back_image: item.back_image,
       stock: item.stock,
       availability: item.stock > 0 ? "in-stock" : "out-of-stock"
     }))
@@ -239,6 +252,31 @@ function decreaseQty(product) {
         </div>
       </section>
 
+      {/* Main logic handeling the back image */}
+        {selectedNutrition && (
+          <div className="nutrition-modal-overlay" onClick={closeNutritionModal}>
+            <div
+              className="nutrition-modal-content"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="nutrition-modal-header">
+                <h2>{selectedNutrition.item_name} Info</h2>
+                <button className="close-modal-btn" onClick={closeNutritionModal}>×</button>
+              </div>
+
+              <div className="nutrition-modal-body">
+                <img
+                  src={`http://groceryv15.localhost:8001${selectedNutrition.back_image}`}
+                  alt="Back Side"
+                />
+              </div>
+
+              <div className="nutrition-modal-footer">
+                <button className="done-btn" onClick={closeNutritionModal}>Done</button>
+              </div>
+            </div>
+          </div>
+        )}
       <main className="products-container">
         <aside className="filters-sidebar">
           <div className="filters-header">
@@ -298,8 +336,29 @@ function decreaseQty(product) {
             <div className="products-grid">
               {allProducts.map(product => (
                 <article key={product.item_code} className="product-card-full">
-                  <div className="product-img-full">
-                    {product.emoji}
+                  {/* <div className="product-img-full">
+                    {product.image ? <img src={`http://groceryv15.localhost:8001/${product.image}`} alt={product.item_code} /> : product.emoji}
+                  </div> */}
+                  <div className="product-img-container large">
+                    <div className="product-img-front">
+                      <div className="product-img">
+                        {product.image ? (
+                          <img src={`http://groceryv15.localhost:8001${product.image}`} alt={product.item_code} />
+                        ) : (
+                          product.emoji
+                        )}
+                      </div>
+
+                      {product.back_image && (
+                        <button
+                          className="info-btn"
+                          onClick={(e) => openNutrition(e, product)}
+                          title="More Info"
+                        >
+                          <i>i</i>
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <button 
                     className={`heart-btn ${liked[product.id] ? 'liked' : ''}`}
