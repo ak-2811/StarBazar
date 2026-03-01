@@ -523,11 +523,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
 }
 
 .product-img-front .product-img img {
-  max-height: 100%;
-  max-width: 100%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 
@@ -688,10 +689,10 @@
   border: 1px solid #f5c6cb;
 }
 
-.product-img-full {
-  background: transparent;
-  border-radius: 8px;
-  height: 140px;
+ .product-img-full {
+   background: transparent;
+   border-radius: 8px;
+   height: 180px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -705,6 +706,34 @@
 .product-card-full:hover .product-img-full {
   transform: scale(1.08);
 }
+
+/* Ensure product images are uniform and don't break card layout */
+.product-img-full img, .product-img img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+  display:block;
+}
+
+@media (max-width:1024px){
+  .product-img-full{height:140px}
+}
+@media (max-width:768px){
+  .product-img-full{height:120px}
+}
+@media (max-width:480px){
+  .product-img-full{height:100px}
+}
+
+/* Target the nested product image structure used in Products.jsx */
+.product-img-container{width:100%;overflow:hidden;border-radius:8px}
+.product-img-front{width:100%;overflow:hidden}
+.product-img-container .product-img, .product-img-front .product-img{width:100%;height:160px;display:flex;align-items:center;justify-content:center;overflow:hidden;box-sizing:border-box}
+.product-card-full{min-height:380px;display:flex;flex-direction:column}
+
+/* Large variant for product images */
+.product-img-container.large .product-img, .product-img-front .product-img.large{width:100%;height:180px;display:flex;align-items:center;justify-content:center;overflow:hidden;box-sizing:border-box}
 
 .heart-btn {
   position: absolute;

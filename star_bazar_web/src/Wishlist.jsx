@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
 import './Home.css'
+import './Wishlist.css'
 import { useNavigate } from 'react-router-dom'
 
 function Wishlist() {
@@ -130,6 +131,18 @@ setProducts(prev => prev.filter(p => p.item_code !== code))
       </header>
 
       <main className="container">
+        {/* Wishlist hero/banner - uses public/unnamed.png */}
+        <div className="hero-banner wishlist-hero" role="banner" aria-label="Wishlist banner">
+          <div className="hero-overlay" />
+          <div className="hero-content">
+            <h1>Your Favorites,<br /> <span className="hero-accent">Always Fresh</span></h1>
+            <p>Get the best quality groceries delivered to your doorstep. Save more on your weekly favorites.</p>
+            <div className="hero-actions">
+              <button className="carousel-btn" onClick={() => navigate('/products')}>Shop Now →</button>
+            </div>
+          </div>
+        </div>
+
         <section className="best-sellers">
           <h3>Your Wishlist</h3>
 

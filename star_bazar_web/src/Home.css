@@ -70,6 +70,28 @@ body{margin:0;font-family:'Segoe UI', -apple-system, system-ui, Roboto, 'Helveti
   text-align:center; /* center text */
   animation:fadeInLeft 0.8s ease-out;
 }
+
+/* Wishlist-specific hero: smaller, rounded card, left-aligned content and image on the right */
+.wishlist-hero{
+  height:260px;
+  border-radius:18px;
+  margin:1.5rem 0;
+  background: linear-gradient(90deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.12) 40%, rgba(0,0,0,0.06) 60%, rgba(0,0,0,0.02) 100%), url('/unnamed.png') right/cover no-repeat;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  overflow:hidden;
+  box-shadow:0 20px 48px rgba(0,0,0,0.12);
+}
+.wishlist-hero .hero-content{position:relative;z-index:2;padding:2.2rem 3rem;max-width:760px;align-items:flex-start;text-align:left}
+.wishlist-hero .hero-badge{background:var(--accent);color:#fff;padding:0.45rem 0.9rem;border-radius:999px;font-weight:800;font-size:0.8rem;margin-bottom:0.8rem}
+.wishlist-hero h1{font-size:3rem;margin:0 0 0.6rem 0;color:#fff;line-height:1.05}
+.wishlist-hero .hero-accent{color:rgba(47,139,58,0.95);font-weight:900}
+.wishlist-hero p{color:rgba(255,255,255,0.95);max-width:520px;margin:0 0 1.1rem 0;font-size:1.05rem}
+.wishlist-hero .hero-actions{display:flex;gap:1rem}
+.wishlist-hero .carousel-btn{padding:0.8rem 1.6rem;border-radius:28px;background:var(--accent);box-shadow:0 8px 28px rgba(47,139,58,0.18)}
+.wishlist-hero .carousel-btn:hover{background:var(--accent-light)}
+
 @keyframes fadeInLeft{from{opacity:0;transform:translateX(-30px);}to{opacity:1;transform:translateX(0)}}
 .hero-banner h1{
   margin:0 0 0.8rem 0;
@@ -250,16 +272,19 @@ body{margin:0;font-family:'Segoe UI', -apple-system, system-ui, Roboto, 'Helveti
   border-color: var(--accent);
 }
 
-.product-img-container {
-  position: relative;
+.product-img-container, 
+.product-img {
   width: 100%;
-  height: 120px;
+  height: 180px; /* Set one consistent height for all cards */
   display: flex;
   align-items: center;
   justify-content: center;
+  background-color: #f6f8fa; /* Keeps the 'empty' space clean */
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 10px;
   margin-bottom: 0.8rem;
 }
-
 .product-card.small .product-img-container {
   height: 140px;
 }
@@ -552,29 +577,30 @@ body{margin:0;font-family:'Segoe UI', -apple-system, system-ui, Roboto, 'Helveti
 .product-card{background:var(--card-bg);border-radius:12px;padding:1rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:flex;flex-direction:column;gap:0.8rem;transition:var(--transition);border:1px solid var(--border-color);overflow:hidden;min-height:100%;position:relative}
 .product-card:hover{box-shadow:0 8px 24px rgba(0,0,0,0.12);transform:translateY(-6px)}
 
-.product-img{
-  background:transparent;
-  border-radius:8px;
-  height:120px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:800;
-  color:var(--muted);
-  font-size:2.5rem;
-  transition:var(--transition);
-  overflow:hidden;
-  flex-shrink:0
+.product-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 380px;
 }
 
-.product-img img{
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  object-position:center;
-  transition:var(--transition)
+.product-img {
+  height: 160px;
+  background: #f6f8fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 10px;
 }
 
+.product-img img {
+  width: 100%;
+  height: 100%;
+  /* This is the magic property: it fits the image inside the 
+     box without distorting, regardless of aspect ratio */
+  object-fit: contain; 
+}
 .product-card:hover .product-img{transform:scale(1.08)}
 .product-card:hover .product-img img{transform:scale(1.12)}
 
@@ -614,7 +640,17 @@ body{margin:0;font-family:'Segoe UI', -apple-system, system-ui, Roboto, 'Helveti
 .product-card.large .product-img{height:180px}
 .product-card.small .product-img{height:140px}
 
-.product-body{display:flex;flex-direction:column;gap:0.6rem;flex-grow:1;justify-content:space-between}
+/* Ensure cards keep a consistent overall height so different image lengths don't affect layout */
+.product-card{min-height:380px}
+.product-card.small{min-height:360px}
+.product-card.large{min-height:420px}
+
+.product-body {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  justify-content: space-between;
+}
 .product-name{font-weight:700;color:#213547;font-size:1rem;line-height:1.3;word-wrap:break-word;max-height:2.6rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical}
 .product-price{color:var(--accent);font-weight:800;font-size:1.2rem;flex-shrink:0}
 .unit{color:var(--muted);font-weight:500;font-size:0.85rem}
@@ -749,4 +785,20 @@ body{margin:0;font-family:'Segoe UI', -apple-system, system-ui, Roboto, 'Helveti
   .offer-card{padding:0.9rem}
   .offer-img{font-size:2.5rem;height:70px}
   .product-name{font-size:0.9rem}
+}
+
+/* Uniform product image/card sizing to avoid layout shifts with long images */
+/* These rules intentionally override earlier variable heights to make cards visually consistent */
+.product-card, .product-card.small, .product-card.large{display:flex;flex-direction:column}
+/* .product-img, .product-img.large{height:160px;width:100%;overflow:hidden;display:flex;align-items:center;justify-content:center;border-radius:8px} */
+
+
+@media (max-width:1024px){
+  .product-img, .product-img.large{height:140px}
+}
+@media (max-width:768px){
+  .product-img, .product-img.large{height:120px}
+}
+@media (max-width:480px){
+  .product-img, .product-img.large{height:110px}
 }

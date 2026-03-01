@@ -1,0 +1,67 @@
+/* Wishlist-specific styles copied from Home.css and refined for the wishlist hero/banner */
+:root{
+  --max-width:1200px;
+  --accent:#2f8b3a;
+  --accent-light:#4caf50;
+  --muted:#6b7176;
+  --card-bg:#fff;
+  --page-bg:#f8fafb;
+  --border-color:#e0e3e6;
+  --transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* Ensure hero overrides load after Home.css */
+.hero-banner.wishlist-hero{
+  height:420px; /* increased for larger visual presence */
+  border-radius:20px;
+  margin:1.5rem 0;
+  /* darken left side for text contrast, image anchored to the right */
+  background: linear-gradient(90deg, rgba(0,0,0,0.36) 0%, rgba(0,0,0,0.14) 40%, rgba(0,0,0,0.06) 60%, rgba(0,0,0,0.02) 100%), url('/unnamed.png') right/cover no-repeat;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  overflow:hidden;
+  box-shadow:0 28px 60px rgba(0,0,0,0.12);
+}
+.hero-banner.wishlist-hero .hero-overlay{
+  position:absolute;left:0;top:0;bottom:0;right:0;
+  /* subtle soft layer so text pops better */
+  background:linear-gradient(90deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.18) 40%, rgba(0,0,0,0.04) 70%, transparent 100%);
+  z-index:1;
+}
+.hero-banner.wishlist-hero .hero-content{
+  position:relative;z-index:2;padding:2.4rem 3rem;max-width:720px;align-items:flex-start;text-align:left;
+}
+.hero-badge{
+  background:var(--accent);color:#fff;padding:0.45rem 0.95rem;border-radius:999px;font-weight:800;font-size:0.82rem;margin-bottom:0.9rem;display:inline-block;letter-spacing:0.6px;
+}
+.hero-banner.wishlist-hero h1{
+  font-size:3.6rem;margin:0 0 0.6rem 0;color:#fff;line-height:1.02;font-weight:900;letter-spacing:-1px;text-shadow:0 6px 22px rgba(0,0,0,0.5);
+}
+.hero-banner.wishlist-hero .hero-accent{color:rgba(47,139,58,0.98);font-weight:900;display:block}
+.hero-banner.wishlist-hero p{
+  color:rgba(255,255,255,0.95);max-width:560px;margin:0 0 1.2rem 0;font-size:1.05rem;line-height:1.8;font-weight:500;text-shadow:0 2px 8px rgba(0,0,0,0.28);
+}
+.hero-actions{display:flex;gap:1rem}
+.carousel-btn{
+  padding:0.9rem 1.8rem;border-radius:32px;background:var(--accent);color:#fff;border:none;cursor:pointer;font-weight:800;box-shadow:0 12px 36px rgba(47,139,58,0.18);display:inline-flex;align-items:center;gap:0.6rem;font-size:1rem;transition:var(--transition)
+}
+.carousel-btn:hover{background:var(--accent-light);transform:translateY(-3px)}
+
+/* Small responsiveness tweaks so hero scales on narrow screens */
+@media (max-width:900px){
+  /* tablet: slightly reduced but still larger than before */
+  .hero-banner.wishlist-hero{height:380px}
+  .hero-banner.wishlist-hero h1{font-size:2.6rem}
+}
+@media (max-width:520px){
+  .hero-banner.wishlist-hero{height:340px;padding:1rem;margin:1rem 0}
+  .hero-banner.wishlist-hero .hero-content{padding:1rem}
+  .hero-banner.wishlist-hero h1{font-size:1.9rem}
+  .hero-banner.wishlist-hero p{font-size:0.98rem}
+  .carousel-btn{padding:0.65rem 1.1rem;font-size:0.95rem}
+}
+
+/* Slight utility to align product grid spacing on wishlist page */
+.best-sellers{margin-top:2rem;margin-bottom:2rem}
+.no-products{padding:2rem;background:transparent;border-radius:8px;color:var(--muted)}

@@ -190,7 +190,7 @@ function decreaseQty(p) {
                     <div className="product-img-front">
                       <div className="product-img">
                         {p.image ? (
-                          <img src={`http://groceryv15.localhost:8001${p.image}`} alt={p.item_code} />
+                          <img src={`http://172.20.10.8:8000${p.image}`} alt={p.item_code} />
                         ) : (
                           p.emoji
                         )}
@@ -242,7 +242,7 @@ function decreaseQty(p) {
 
                 <div className="nutrition-modal-body">
                   <img
-                    src={`http://groceryv15.localhost:8001${selectedNutrition.back_image}`}
+                    src={`http://172.20.10.8:8000${selectedNutrition.back_image}`}
                     alt="Back Side"
                   />
                 </div>
@@ -267,7 +267,7 @@ function decreaseQty(p) {
                   {liked[p.item_code] ? '❤' : '🤍'}
                 </button>
                 <div className="offer-badge">Special Deal</div>
-                <div className="offer-img">{p.image ? <img src={`http://groceryv15.localhost:8001${p.image}`} alt={p.item_code} /> : p.emoji}</div>
+                <div className="offer-img">{p.image ? <img src={`http://172.20.10.8:8000${p.image}`} alt={p.item_code} /> : p.emoji}</div>
                 <div className="offer-body">
                   <div className="offer-name">{p.item_name}</div>
                   <div className="price-section">
@@ -312,7 +312,7 @@ function decreaseQty(p) {
                     <div className="product-img-front">
                       <div className="product-img large">
                         {p.image ? (
-                          <img src={`http://groceryv15.localhost:8001${p.image}`} alt={p.item_code} />
+                          <img src={`http://172.20.10.8:8000${p.image}`} alt={p.item_code} />
                         ) : (
                           p.emoji
                         )}
