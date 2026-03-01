@@ -3,15 +3,46 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 import json
 from datetime import date, datetime
+from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
+from .serializers import SignupSerializer, LoginSerializer
 
 
-FRAPPE_URL = "http://192.168.29.249:8000/"
-API_KEY = "ba0e494a95160ad"
-API_SECRET = "4d101c355e2c8d3"
+@api_view(['POST'])
+def signup_view(request):
+    serializer = SignupSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        refresh = RefreshToken.for_user(user)
+
+        return Response({
+            "token": str(refresh.access_token),
+            "email": user.email
+        })
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def login_view(request):
+    serializer = LoginSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.validated_data
+        refresh = RefreshToken.for_user(user)
+
+        return Response({
+            "token": str(refresh.access_token),
+            "email": user.email
+        })
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+FRAPPE_URL = "http://172.28.180.147:8001"
+API_KEY = "823008797018d0a"
+API_SECRET = "c3977b78a0e37d6"
 
 HEADERS = {
     "Authorization": f"token {API_KEY}:{API_SECRET}",
-    "Host": "sstore"
+    "Host": "groceryv15.localhost"
 }
 
 

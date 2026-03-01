@@ -166,14 +166,14 @@ setProducts(prev => prev.filter(p => p.item_code !== code))
                     </button>
 
                     <div className="product-img large">
-                    {p.image ? (
-                        <img
-                        src={`http://groceryv15.localhost:8001/${p.image}`}
-                        alt={p.item_code}
-                        />
-                    ) : (
-                        '🛍️'
-                    )}
+                      {p.image ? (
+                          <img
+                          src={`http://groceryv15.localhost:8001/${p.image}`}
+                          alt={p.item_code}
+                          />
+                      ) : (
+                          '🛍️'
+                      )}
                     </div>
 
                     <div className="product-body">

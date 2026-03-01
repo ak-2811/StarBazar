@@ -15,30 +15,30 @@ function Login() {
     setLoading(true)
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch('http://localhost:8000/api/login/', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({ email, password })
-      // })
-      // const data = await response.json()
-      // if (data.token) {
-      //   localStorage.setItem('token', data.token)
-      //   navigate('/')
-      // }
+      const response = await fetch('http://127.0.0.1:8000/api/login/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password
+        })
+      })
 
-      // Temporary demo - remove after implementing actual API
-      if (email && password) {
-        localStorage.setItem('user', JSON.stringify({ email }))
+      const data = await response.json()
+
+      if (response.ok) {
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify({ email: data.email }))
         navigate('/')
       } else {
-        setError('Please fill in all fields')
+        setError(data.detail || 'Invalid credentials')
       }
+
     } catch (err) {
       setError('Login failed. Please try again.')
-      console.error('Login error:', err)
+      console.log(err)
     } finally {
       setLoading(false)
     }

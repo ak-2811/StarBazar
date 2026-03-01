@@ -22,11 +22,10 @@ function Signup() {
     }))
   }
 
-  const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
 
-    // Validation
     if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) {
       setError('Please fill in all fields')
       return
@@ -34,11 +33,6 @@ function Signup() {
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match')
-      return
-    }
-
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long')
       return
     }
 
@@ -50,33 +44,31 @@ function Signup() {
     setLoading(true)
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch('http://localhost:8000/api/signup/', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({
-      //     full_name: formData.fullName,
-      //     email: formData.email,
-      //     password: formData.password
-      //   })
-      // })
-      // const data = await response.json()
-      // if (data.token) {
-      //   localStorage.setItem('token', data.token)
-      //   navigate('/')
-      // }
+      const response = await fetch('http://127.0.0.1:8000/api/signup/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: formData.email,
+          email: formData.email,
+          password: formData.password
+        })
+      })
 
-      // Temporary demo - remove after implementing actual API
-      localStorage.setItem('user', JSON.stringify({
-        fullName: formData.fullName,
-        email: formData.email
-      }))
-      navigate('/')
+      const data = await response.json()
+
+      if (response.ok) {
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify({ email: data.email }))
+        navigate('/login')
+      } else {
+        setError(data.detail || 'Signup failed')
+      }
+
     } catch (err) {
       setError('Signup failed. Please try again.')
-      console.error('Signup error:', err)
+      console.log(err)
     } finally {
       setLoading(false)
     }
