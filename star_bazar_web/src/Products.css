@@ -499,11 +499,17 @@
 }
 
 .product-card.small .product-img-container {
-  height: 140px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #f6f8fa;
+  border-radius: 8px;
 }
 
 .product-img-container.large {
-  height: 180px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #f6f8fa;
+  border-radius: 8px;
 }
 
 .product-img-front {
@@ -518,8 +524,8 @@
 }
 
 .product-img-front .product-img {
-  height: 100%;
   width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -530,6 +536,7 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
+  object-position: center;
 }
 
 /* Custom scrollable categories list */
@@ -727,13 +734,13 @@
 }
 
 /* Target the nested product image structure used in Products.jsx */
-.product-img-container{width:100%;overflow:hidden;border-radius:8px}
-.product-img-front{width:100%;overflow:hidden}
-.product-img-container .product-img, .product-img-front .product-img{width:100%;height:160px;display:flex;align-items:center;justify-content:center;overflow:hidden;box-sizing:border-box}
+.product-img-container{width:100%;aspect-ratio:1/1;overflow:hidden;border-radius:8px}
+.product-img-front{width:100%;height:100%;overflow:hidden}
+.product-img-container .product-img, .product-img-front .product-img{width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;box-sizing:border-box}
 .product-card-full{min-height:380px;display:flex;flex-direction:column}
 
-/* Large variant for product images */
-.product-img-container.large .product-img, .product-img-front .product-img.large{width:100%;height:180px;display:flex;align-items:center;justify-content:center;overflow:hidden;box-sizing:border-box}
+/* Large variant for product images - use same aspect ratio */
+.product-img-container.large .product-img, .product-img-front .product-img.large{width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;overflow:hidden;box-sizing:border-box}
 
 .heart-btn {
   position: absolute;
