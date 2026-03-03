@@ -13,10 +13,12 @@ const navigate=useNavigate();
   // small helper to go to wishlist
 const goToWishlist = () => navigate('/wishlist')
 const [selectedNutrition, setSelectedNutrition] = useState(null)
+const [showBack, setShowBack] = useState(false)
 
 // function to open and close the back image
 function openNutrition(e, product) {
   e.stopPropagation()
+  setShowBack(false)   // Always start with front image
   setSelectedNutrition(product)
 }
 
@@ -60,6 +62,29 @@ const goToCheckout = () => {
   // const [quantities, setQuantities] = useState({})
   // const [addingToCart, setAddingToCart] = useState({})
   const [liked, setLiked] = useState({})
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+
+    if (!token) return
+
+    axios.get("http://localhost:8000/api/wishlist/", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    .then(res => {
+      const likedMap = {}
+      res.data.item_codes.forEach(code => {
+        likedMap[code] = true
+      })
+      setLiked(likedMap)
+    })
+    .catch(err => {
+      console.log("Wishlist fetch error:", err)
+    })
+
+  }, [])
+
   const [filters, setFilters] = useState({
     category: selectedCategory || 'all',
     priceRange: [0, 15],
@@ -75,7 +100,16 @@ const goToCheckout = () => {
 
   // Get unique brands
   const brands = ['all', ...new Set(allProducts.map(p => p.brand))]
-  const categories = ['all', ...new Set(allProducts.map(p => p.category))]
+  // const categories = ['all', ...new Set(allProducts.map(p => p.category))]
+  const [categories, setCategories] = useState(['all'])
+
+  useEffect(() => {
+  axios.get("http://localhost:8000/api/categories/")
+    .then(res => {
+      setCategories(['all', ...res.data.categories])
+    })
+    .catch(err => console.error("Category fetch error:", err))
+}, [])
 
   // 
   
@@ -115,11 +149,40 @@ function decreaseQty(product) {
 
 }
 
-  function toggleLike(productId) {
-    setLiked(prev => ({
-      ...prev,
-      [productId]: !prev[productId]
-    }))
+  // function toggleLike(productId) {
+  //   setLiked(prev => ({
+  //     ...prev,
+  //     [productId]: !prev[productId]
+  //   }))
+  // }
+
+  function toggleLike(item_code) {
+    const token = localStorage.getItem("token")
+
+    if (!token) {
+      navigate("/login")
+      return
+    }
+    axios.post(
+      "http://localhost:8000/api/wishlist/toggle/",
+      { item_code },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    )
+    .then(res => {
+
+      setLiked(prev => ({
+        ...prev,
+        [item_code]: res.data.status === "added"
+      }))
+
+    })
+    .catch(err => {
+      console.log("Wishlist error:", err)
+    })
   }
 
   // Filter products
@@ -265,14 +328,46 @@ function decreaseQty(product) {
               </div>
 
               <div className="nutrition-modal-body">
-                <img
+                {/* <img
                   src={`http://groceryv15.localhost:8001${selectedNutrition.back_image}`}
                   alt="Back Side"
+                /> */}
+                <img
+                  src={`http://groceryv15.localhost:8001${
+                    showBack && selectedNutrition.back_image
+                      ? selectedNutrition.back_image
+                      : selectedNutrition.image
+                  }`}
+                  alt="Product View"
                 />
               </div>
 
-              <div className="nutrition-modal-footer">
+              {/* <div className="nutrition-modal-footer">
                 <button className="done-btn" onClick={closeNutritionModal}>Done</button>
+              </div> */}
+              <div className="nutrition-modal-footer">
+                {selectedNutrition.back_image && (
+                    <button
+                      className="done-btn flip-icon-btn"
+                      onClick={() => setShowBack(prev => !prev)}
+                      title="Flip Image"
+                      style={{
+                        width: "50px",
+                        height: "50px",
+                        borderRadius: "50%",
+                        fontSize: "20px",
+                        marginBottom: "12px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}
+                    >
+                      ⟳
+                    </button>
+                )}
+                  <button className="done-btn" onClick={closeNutritionModal}>
+                    Done
+                  </button>
               </div>
             </div>
           </div>
@@ -361,11 +456,11 @@ function decreaseQty(product) {
                     </div>
                   </div>
                   <button 
-                    className={`heart-btn ${liked[product.id] ? 'liked' : ''}`}
-                    onClick={() => toggleLike(product.id)}
-                    title={liked[product.id] ? 'Remove from favorites' : 'Add to favorites'}
+                    className={`heart-btn ${liked[product.item_code] ? 'liked' : ''}`}
+                    onClick={() => toggleLike(product.item_code)}
+                    title={liked[product.item_code] ? 'Remove from favorites' : 'Add to favorites'}
                   >
-                    {liked[product.id] ? '❤' : '🤍'}
+                    {liked[product.item_code] ? '❤' : '🤍'}
                   </button>
                   <div className="product-body-full">
                     <div className="product-name-full">{product.name}</div>

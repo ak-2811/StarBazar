@@ -10,12 +10,19 @@ function Home() {
   const [shopallProducts,setShopAllProducts]=useState([])
   const [specialOffers,setSpecialOffers]=useState([])
   const [selectedNutrition, setSelectedNutrition] = useState(null)
+  const [showBack, setShowBack] = useState(false)
   const navigate = useNavigate();
 
   // Nutrition block open and close 
+//   function openNutrition(e, product) {
+//   e.stopPropagation()
+//   setSelectedNutrition(product)
+// }
+
   function openNutrition(e, product) {
-  e.stopPropagation()
-  setSelectedNutrition(product)
+    e.stopPropagation()
+    setShowBack(false)   // Always start with front image
+    setSelectedNutrition(product)
 }
 
   function closeNutritionModal() {
@@ -55,14 +62,6 @@ function Home() {
     })
 }, [])
 
-  // Offers data
-  // const offers = [
-  //   { id: 101, name: 'Red Apples', originalPrice: 5.99, offerPrice: 2.99, offerText: 'Buy 2 at 2.99', category: 'Fruits', emoji: '🍎' },
-  //   { id: 102, name: 'Organic Milk', originalPrice: 6.99, offerPrice: 3.49, offerText: 'Buy 2 at 2.99', category: 'Dairy', emoji: '🥛' },
-  //   { id: 103, name: 'Bananas', originalPrice: 3.99, offerPrice: 1.29, offerText: 'Buy 2 at 2.99', category: 'Fruits', emoji: '🍌' },
-  //   { id: 104, name: 'Cheddar Cheese', originalPrice: 8.99, offerPrice: 4.59, offerText: 'Buy 2 at 2.99', category: 'Dairy', emoji: '🧀' },
-  // ]
-
 const [cart, setCart] = useState(
   JSON.parse(localStorage.getItem("cart")) || {}
 )
@@ -80,25 +79,78 @@ const goToCheckout = () => {
   });
 };
 
-  // Local wishlist state (keeps track of liked / wishlisted products)
-  const [liked, setLiked] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('liked')) || {}
-    } catch (e) {
-      return {}
-    }
-  })
+  // DB wishlist state (keeps track of liked / wishlisted products)
+  const [liked, setLiked] = useState({})
 
-  function toggleLike(productId) {
-    setLiked(prev => {
-      const next = { ...prev, [productId]: !prev[productId] }
-      try {
-        localStorage.setItem('liked', JSON.stringify(next))
-      } catch (e) {
-        // ignore storage errors
-        console.log(e)
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+
+    if (!token) return
+
+    axios.get("http://localhost:8000/api/wishlist/", {
+      headers: {
+        Authorization: `Bearer ${token}`
       }
-      return next
+    })
+    .then(res => {
+      const likedMap = {}
+      res.data.item_codes.forEach(code => {
+        likedMap[code] = true
+      })
+      setLiked(likedMap)
+    })
+    .catch(err => {
+      console.log("Wishlist fetch error:", err)
+    })
+
+  }, [])
+  // const [liked, setLiked] = useState(() => {
+  //   try {
+  //     return JSON.parse(localStorage.getItem('liked')) || {}
+  //   } catch (e) {
+  //     return {}
+  //   }
+  // })
+
+  // function toggleLike(productId) {
+  //   setLiked(prev => {
+  //     const next = { ...prev, [productId]: !prev[productId] }
+  //     try {
+  //       localStorage.setItem('liked', JSON.stringify(next))
+  //     } catch (e) {
+  //       // ignore storage errors
+  //       console.log(e)
+  //     }
+  //     return next
+  //   })
+  // }
+
+  function toggleLike(item_code) {
+    const token = localStorage.getItem("token")
+
+    if (!token) {
+      navigate("/login")
+      return
+    }
+    axios.post(
+      "http://localhost:8000/api/wishlist/toggle/",
+      { item_code },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    )
+    .then(res => {
+
+      setLiked(prev => ({
+        ...prev,
+        [item_code]: res.data.status === "added"
+      }))
+
+    })
+    .catch(err => {
+      console.log("Wishlist error:", err)
     })
   }
 
@@ -163,7 +215,16 @@ function decreaseQty(p) {
           <p>Shop the best quality products at great prices!</p>
           <div className="hero-categories">
             {['Home','Shop All','Contact Us'].map((c, idx) => (
-              <button key={c} className={`hero-cat-btn ${idx === 0 ? 'active' : ''}`}>{c}</button>
+              <button key={c} 
+              className={`hero-cat-btn ${idx === 0 ? 'active' : ''}`}
+              onClick={() => {
+                  if (c === 'Home') {
+                    navigate('/')
+                  } else if (c === 'Shop All') {
+                    // Handle Contact Us
+                    navigate('allproducts/')
+                  }
+                }}>{c}</button>
             ))}
           </div>
         </div>
@@ -241,14 +302,44 @@ function decreaseQty(p) {
                 </div>
 
                 <div className="nutrition-modal-body">
-                  <img
+                  {/* <img
                     src={`http://groceryv15.localhost:8001${selectedNutrition.back_image}`}
                     alt="Back Side"
+                  /> */}
+                  <img
+                    src={`http://groceryv15.localhost:8001${
+                      showBack && selectedNutrition.back_image
+                        ? selectedNutrition.back_image
+                        : selectedNutrition.image
+                    }`}
+                    alt="Product View"
                   />
                 </div>
-
+                {/*Button Flip */}
                 <div className="nutrition-modal-footer">
-                  <button className="done-btn" onClick={closeNutritionModal}>Done</button>
+                  {/* <button className="done-btn" onClick={closeNutritionModal}>Done</button> */}
+                    {selectedNutrition.back_image && (
+                      <button
+                        className="done-btn flip-icon-btn"
+                        onClick={() => setShowBack(prev => !prev)}
+                        title="Flip Image"
+                        style={{
+                          width: "50px",
+                          height: "50px",
+                          borderRadius: "50%",
+                          fontSize: "20px",
+                          marginBottom: "12px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center"
+                        }}
+                      >
+                        ⟳
+                      </button>
+                    )}
+                  <button className="done-btn" onClick={closeNutritionModal}>
+                    Done
+                  </button>
                 </div>
               </div>
             </div>
@@ -258,14 +349,14 @@ function decreaseQty(p) {
           <div className="offers-grid">
             {specialOffers.map(p => (
               <article key={p.item_code} className="offer-card">
-                <button
+                {/* <button
                   type="button"
                   className={`heart-btn ${liked[p.item_code] ? 'liked' : ''}`}
                   onClick={(e) => { e.stopPropagation(); toggleLike(p.item_code) }}
                   title={liked[p.item_code] ? 'Remove from wishlist' : 'Add to wishlist'}
                 >
                   {liked[p.item_code] ? '❤' : '🤍'}
-                </button>
+                </button> */}
                 <div className="offer-badge">Special Deal</div>
                 <div className="offer-img">{p.image ? <img src={`http://groceryv15.localhost:8001${p.image}`} alt={p.item_code} /> : p.emoji}</div>
                 <div className="offer-body">
@@ -310,7 +401,7 @@ function decreaseQty(p) {
                 {/* <div className="product-img large">{p.image ? <img src={`http://groceryv15.localhost:8001${p.image}`} alt={p.item_code} /> : p.emoji}</div> */}
                 <div className="product-img-container large">
                     <div className="product-img-front">
-                      <div className="product-img large">
+                      <div className="product-img">
                         {p.image ? (
                           <img src={`http://groceryv15.localhost:8001${p.image}`} alt={p.item_code} />
                         ) : (

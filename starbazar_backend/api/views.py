@@ -6,7 +6,44 @@ from datetime import date, datetime
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import SignupSerializer, LoginSerializer
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import permission_classes
+from django.contrib.auth.models import User
+from .models import Wishlist
 
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_wishlist(request):
+
+    items = Wishlist.objects.filter(user=request.user)
+    item_codes = [w.item_code for w in items]
+
+    return Response({"item_codes": item_codes})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def toggle_wishlist(request):
+
+    item_code = request.data.get("item_code")
+
+    if not item_code:
+        return Response({"error": "Item code required"}, status=400)
+
+    wishlist_item = Wishlist.objects.filter(
+        user=request.user,
+        item_code=item_code
+    ).first()
+
+    if wishlist_item:
+        wishlist_item.delete()
+        return Response({"status": "removed"})
+    else:
+        Wishlist.objects.create(
+            user=request.user,
+            item_code=item_code
+        )
+        return Response({"status": "added"})
 
 @api_view(['POST'])
 def signup_view(request):
@@ -45,6 +82,22 @@ HEADERS = {
     "Host": "groceryv15.localhost"
 }
 
+
+@api_view(['GET'])
+def get_categories(request):
+
+    url = (
+        f"{FRAPPE_URL}/api/resource/Item%20Group?"
+        f'fields=["name"]'
+        f"&limit_page_length=500"
+    )
+
+    response = requests.get(url, headers=HEADERS).json()
+    data = response.get("data", [])
+
+    categories = [d["name"] for d in data]
+
+    return Response({"categories": categories})
 
 @api_view(['GET'])
 def all_products(request):
@@ -148,14 +201,14 @@ def all_products(request):
     bin_map = {d["item_code"]: float(d["actual_qty"] or 0) for d in bin_data}
 
     pending_url = f"{FRAPPE_URL}/api/method/star_bazar.star_bazar.api.stock.get_pending_pos_qty"
-    print("ITEM CODES SENT:", item_codes)
+    # print("ITEM CODES SENT:", item_codes)
 
     pending_response = requests.post(
         pending_url,
         headers=HEADERS,
         json={"item_codes": item_codes}
     ).json()
-    print(pending_response)
+    # print(pending_response)
 
     pending_rows = pending_response.get("message", [])
 

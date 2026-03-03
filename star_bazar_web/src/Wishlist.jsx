@@ -22,33 +22,78 @@ function Wishlist() {
     })
 }, [])
 
-  useEffect(() => {
-  const saved = JSON.parse(localStorage.getItem('liked')) || {}
-  setLikedMap(saved)
-}, [])
+//   useEffect(() => {
+//   const saved = JSON.parse(localStorage.getItem('liked')) || {}
+//   setLikedMap(saved)
+// }, [])
 
 useEffect(() => {
-  const saved = JSON.parse(localStorage.getItem('liked')) || {}
-  const likedCodes = Object.keys(saved).filter(k => saved[k])
-
-  if (likedCodes.length === 0) {
-    setProducts([])
-    setLoading(false)
+  const token = localStorage.getItem("token")
+  if (!token) {
+    navigate("/login")
     return
   }
-
   setLoading(true)
 
-  axios.post("http://localhost:8000/api/wishlist-products/", {
-      item_codes: likedCodes
+  axios.get("http://localhost:8000/api/wishlist/", {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
   })
   .then(res => {
-      setProducts(res.data.products)
+    const likedCodes = res.data.item_codes
+
+    if (!likedCodes.length) {
+      setProducts([])
+      setLoading(false)
+      return
+    }
+
+    // Create likedMap
+    const map = {}
+    likedCodes.forEach(code => {
+      map[code] = true
+    })
+    setLikedMap(map)
+
+    // Fetch full product data
+    return axios.post(
+      "http://localhost:8000/api/wishlist-products/",
+      { item_codes: likedCodes }
+    )
+
   })
-  .catch(err => console.error(err))
+  .then(res => {
+    if (res) {
+      setProducts(res.data.products)
+    }
+  })
+  .catch(err => {
+    console.error("Wishlist fetch error:", err)
+  })
   .finally(() => setLoading(false))
 
-}, [likedMap])
+}, [navigate])
+
+// useEffect(() => {
+//   if (likedCodes.length === 0) {
+//     setProducts([])
+//     setLoading(false)
+//     return
+//   }
+
+//   setLoading(true)
+
+//   axios.post("http://localhost:8000/api/wishlist-products/", {
+//       item_codes: likedCodes
+//   })
+//   .then(res => {
+//       setProducts(res.data.products)
+//   })
+//   .catch(err => console.error(err))
+//   .finally(() => setLoading(false))
+
+// }, [likedMap])
 
 // For add to cart and adding qtys
 const [cart, setCart] = useState(
@@ -105,14 +150,41 @@ function decreaseQty(p) {
 }
 
 function toggleLike(code) {
-    setLikedMap(prev => {
-        const next = { ...prev, [code]: !prev[code] }
-        try { localStorage.setItem('liked', JSON.stringify(next)) } catch (e) {console.log(e)}
-        return next
-    })
 
-// remove from products state immediately for snappy UI
-setProducts(prev => prev.filter(p => p.item_code !== code))
+  const token = localStorage.getItem("token")
+
+  if (!token) {
+    navigate("/login")
+    return
+  }
+
+  axios.post(
+    "http://localhost:8000/api/wishlist/toggle/",
+    { item_code: code },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  )
+  .then(res => {
+
+    if (res.data.status === "removed") {
+
+      setLikedMap(prev => {
+        const updated = { ...prev }
+        delete updated[code]
+        return updated
+      })
+
+      setProducts(prev => prev.filter(p => p.item_code !== code))
+
+    }
+
+  })
+  .catch(err => {
+    console.error("Toggle error:", err)
+  })
 }
 
   return (
@@ -138,7 +210,7 @@ setProducts(prev => prev.filter(p => p.item_code !== code))
             <h1>Your Favorites,<br /> <span className="hero-accent">Always Fresh</span></h1>
             <p>Get the best quality groceries delivered to your doorstep. Save more on your weekly favorites.</p>
             <div className="hero-actions">
-              <button className="carousel-btn" onClick={() => navigate('/products')}>Shop Now →</button>
+              <button className="carousel-btn" onClick={() => navigate('/allproducts')}>Shop Now →</button>
             </div>
           </div>
         </div>
