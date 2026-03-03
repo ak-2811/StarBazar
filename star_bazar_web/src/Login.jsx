@@ -29,8 +29,13 @@ function Login() {
       const data = await response.json()
 
       if (response.ok) {
+         console.log("Login response data:", data)
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify({ email: data.email }))
+        // Store username for display in header
+        if (data.username) {
+          localStorage.setItem('username', data.username)
+        }
         navigate('/')
       } else {
         setError(data.detail || 'Invalid credentials')

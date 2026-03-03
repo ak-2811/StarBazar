@@ -8,6 +8,8 @@ import axios from 'axios'
 function Products({ selectedCategory = null, onNavigate }) {
   // Enhanced product data with categories, brands, and prices
 const [allProducts, setAllProducts] = useState([])
+const [currentUser, setCurrentUser] = useState(null)
+const [showUserMenu, setShowUserMenu] = useState(false)
 
 const navigate=useNavigate();
   // small helper to go to wishlist
@@ -32,6 +34,34 @@ function closeNutritionModal() {
 // Convert object → array (REAL cart)
 // const cart = Object.values(cartObject);
 const [specialOffers,setSpecialOffers]=useState([])
+
+// Fetch current user on component mount
+useEffect(() => {
+  const checkUser = () => {
+    const token = localStorage.getItem("token")
+    const username = localStorage.getItem("username")
+    
+    if (token && username) {
+      setCurrentUser(username)
+    } else {
+      setCurrentUser(null)
+    }
+  }
+  
+  checkUser()
+  
+  // Listen for storage changes (for cross-tab sync)
+  window.addEventListener("storage", checkUser)
+  
+  // Also listen for focus to re-check user state
+  window.addEventListener("focus", checkUser)
+  
+  return () => {
+    window.removeEventListener("storage", checkUser)
+    window.removeEventListener("focus", checkUser)
+  }
+}, [])
+
 useEffect(() => {
   axios.get("http://localhost:8000/api/pricing-offers/")
     .then(res => {
@@ -267,6 +297,14 @@ function decreaseQty(product) {
 
 }, [currentPage, filters, sortBy])
 
+const handleLogout = () => {
+  localStorage.removeItem("token")
+  localStorage.removeItem("username")
+  setCurrentUser(null)
+  setShowUserMenu(false)
+  navigate("/login")
+}
+
   return (
     <div className="site-root">
       <header className="site-header">
@@ -285,6 +323,48 @@ function decreaseQty(product) {
           <nav className="header-actions">
             <button className="icon-btn" onClick={goToWishlist}>❤</button>
             <button className="icon-btn" onClick={() => goToCheckout()}>🛒 <span className="cart-count">{Object.values(cart).reduce((total, item) => total + item.qty, 0)}</span></button>
+            
+            {currentUser ? (
+              <div className="user-profile-container">
+                <button 
+                  className="user-profile-btn"
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  title={currentUser}
+                >
+                  <span className="user-avatar">👤</span>
+                  <span className="user-name">{currentUser}</span>
+                  <span className="dropdown-arrow">▼</span>
+                </button>
+                
+                {showUserMenu && (
+                  <div className="user-dropdown-menu">
+                    <button 
+                      className="dropdown-item"
+                      onClick={() => {
+                        goToCheckout()
+                        setShowUserMenu(false)
+                      }}
+                    >
+                      🛒 Checkout
+                    </button>
+                    <div className="dropdown-divider"></div>
+                    <button 
+                      className="dropdown-item logout"
+                      onClick={handleLogout}
+                    >
+                      🚪 Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button 
+                className="icon-btn login-btn"
+                onClick={() => navigate('/login')}
+              >
+                🔐 Login
+              </button>
+            )}
           </nav>
         </div>
       </header>
@@ -328,46 +408,62 @@ function decreaseQty(product) {
               </div>
 
               <div className="nutrition-modal-body">
-                {/* <img
-                  src={`http://groceryv15.localhost:8001${selectedNutrition.back_image}`}
-                  alt="Back Side"
-                /> */}
-                <img
-                  src={`http://groceryv15.localhost:8001${
-                    showBack && selectedNutrition.back_image
-                      ? selectedNutrition.back_image
-                      : selectedNutrition.image
-                  }`}
-                  alt="Product View"
-                />
+                <div className="modal-image-container">
+                  <img
+                    src={`http://192.168.29.115:8000${
+                      showBack && selectedNutrition.back_image
+                        ? selectedNutrition.back_image
+                        : selectedNutrition.image
+                    }`}
+                    alt={showBack ? "Back Side" : "Product View"}
+                    className={`modal-product-img ${showBack ? 'back-view' : 'front-view'}`}
+                  />
+                  <div className="image-label">
+                    {showBack ? "Nutrition & Details" : "Product View"}
+                  </div>
+                </div>
               </div>
 
-              {/* <div className="nutrition-modal-footer">
-                <button className="done-btn" onClick={closeNutritionModal}>Done</button>
-              </div> */}
               <div className="nutrition-modal-footer">
-                {selectedNutrition.back_image && (
-                    <button
-                      className="done-btn flip-icon-btn"
-                      onClick={() => setShowBack(prev => !prev)}
-                      title="Flip Image"
-                      style={{
-                        width: "50px",
-                        height: "50px",
-                        borderRadius: "50%",
-                        fontSize: "20px",
-                        marginBottom: "12px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center"
-                      }}
-                    >
-                      ⟳
-                    </button>
-                )}
-                  <button className="done-btn" onClick={closeNutritionModal}>
-                    Done
+                <div className="image-nav-container">
+                  <button 
+                    className="image-nav-btn nav-left"
+                    onClick={() => setShowBack(false)}
+                    title="View Product"
+                    aria-label="Previous"
+                  >
+                    ‹
                   </button>
+                  
+                  <div className="image-dots">
+                    <button 
+                      className={`dot ${!showBack ? 'active' : ''}`}
+                      onClick={() => setShowBack(false)}
+                      title="Front"
+                      aria-label="View front"
+                    ></button>
+                    {selectedNutrition.back_image && (
+                      <button 
+                        className={`dot ${showBack ? 'active' : ''}`}
+                        onClick={() => setShowBack(true)}
+                        title="Back"
+                        aria-label="View back"
+                      ></button>
+                    )}
+                  </div>
+                  
+                  <button 
+                    className="image-nav-btn nav-right"
+                    onClick={() => setShowBack(true)}
+                    title="View Nutrition Info"
+                    aria-label="Next"
+                  >
+                    ›
+                  </button>
+                </div>
+                <button className="done-btn" onClick={closeNutritionModal}>
+                  Done
+                </button>
               </div>
             </div>
           </div>
@@ -438,7 +534,7 @@ function decreaseQty(product) {
                     <div className="product-img-front">
                       <div className="product-img">
                         {product.image ? (
-                          <img src={`http://groceryv15.localhost:8001${product.image}`} alt={product.item_code} />
+                          <img src={`http://192.168.29.115:8000/${product.image}`} alt={product.item_code} />
                         ) : (
                           product.emoji
                         )}

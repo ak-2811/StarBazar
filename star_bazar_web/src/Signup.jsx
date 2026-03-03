@@ -50,7 +50,7 @@ function Signup() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username: formData.email,
+          username: formData.fullName,
           email: formData.email,
           password: formData.password
         })
@@ -61,6 +61,8 @@ function Signup() {
       if (response.ok) {
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify({ email: data.email }))
+        // Store username for display in header
+        localStorage.setItem('username', formData.fullName)
         navigate('/login')
       } else {
         setError(data.detail || 'Signup failed')

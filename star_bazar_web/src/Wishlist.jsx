@@ -9,6 +9,8 @@ function Wishlist() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const[specialOffers,setSpecialOffers]=useState([])
+  const [selectedNutrition, setSelectedNutrition] = useState(null)
+  const [showBack, setShowBack] = useState(false)
   const navigate = useNavigate()
 
   // Getting the offer products
@@ -105,7 +107,7 @@ useEffect(() => {
   localStorage.setItem("cart", JSON.stringify(cart))
 }, [cart])
 
-const goToCheckout = () => {
+  const goToCheckout = () => {
   navigate("/checkout", {
     state: {
       offers: specialOffers
@@ -113,7 +115,15 @@ const goToCheckout = () => {
   });
 };
 
-function increaseQty(p) {
+function openNutrition(e, product) {
+  e.stopPropagation()
+  setShowBack(false)   // Always start with front image
+  setSelectedNutrition(product)
+}
+
+function closeNutritionModal() {
+  setSelectedNutrition(null)
+}function increaseQty(p) {
   const key = p.item_code
   console.log("Current Product Code:", p.item_code)
   setCart(prev => ({
@@ -237,22 +247,33 @@ function toggleLike(code) {
                     {likedMap[p.item_code] ? '❤' : '🤍'}
                     </button>
 
-                    <div className="product-img large">
-                      {p.image ? (
-                          <img
-                          src={`http://groceryv15.localhost:8001/${p.image}`}
-                          alt={p.item_code}
-                          />
-                      ) : (
-                          '🛍️'
-                      )}
+                    <div className="product-img-container large">
+                      <div className="product-img-front">
+                        <div className="product-img">
+                          {p.image ? (
+                            <img src={`http://192.168.29.115:8000/${p.image}`} alt={p.item_code} />
+                          ) : (
+                            p.emoji
+                          )}
+                        </div>
+
+                        {p.back_image && (
+                          <button
+                            className="info-btn"
+                            onClick={(e) => openNutrition(e, p)}
+                            title="More Info"
+                          >
+                            <i>i</i>
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <div className="product-body">
                     <div className="product-name">{p.item_name}</div>
 
                     <div className="product-price">
-                        ${p.price.toFixed(2)} <span className="unit">{p.unit}</span>
+                        ${p.price.toFixed(2)} <span className="unit">/ {p.unit}</span>
                     </div>
 
                     {p.availability === 'out-of-stock' ? (
@@ -282,6 +303,79 @@ function toggleLike(code) {
             </div>
             )}
         </section>
+
+        {selectedNutrition && (
+            <div className="nutrition-modal-overlay" onClick={closeNutritionModal}>
+              <div
+                className="nutrition-modal-content"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="nutrition-modal-header">
+                  <h2>{selectedNutrition.item_name} Info</h2>
+                  <button className="close-modal-btn" onClick={closeNutritionModal}>×</button>
+                </div>
+
+                <div className="nutrition-modal-body">
+                  <div className="modal-image-container">
+                    <img
+                      src={`http://192.168.29.115:8000${
+                        showBack && selectedNutrition.back_image
+                          ? selectedNutrition.back_image
+                          : selectedNutrition.image
+                      }`}
+                      alt={showBack ? "Back Side" : "Product View"}
+                      className={`modal-product-img ${showBack ? 'back-view' : 'front-view'}`}
+                    />
+                    <div className="image-label">
+                      {showBack ? "Nutrition & Details" : "Product View"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="nutrition-modal-footer">
+                  <div className="image-nav-container">
+                    <button 
+                      className="image-nav-btn nav-left"
+                      onClick={() => setShowBack(false)}
+                      title="View Product"
+                      aria-label="Previous"
+                    >
+                      ‹
+                    </button>
+                    
+                    <div className="image-dots">
+                      <button 
+                        className={`dot ${!showBack ? 'active' : ''}`}
+                        onClick={() => setShowBack(false)}
+                        title="Front"
+                        aria-label="View front"
+                      ></button>
+                      {selectedNutrition.back_image && (
+                        <button 
+                          className={`dot ${showBack ? 'active' : ''}`}
+                          onClick={() => setShowBack(true)}
+                          title="Back"
+                          aria-label="View back"
+                        ></button>
+                      )}
+                    </div>
+                    
+                    <button 
+                      className="image-nav-btn nav-right"
+                      onClick={() => setShowBack(true)}
+                      title="View Nutrition Info"
+                      aria-label="Next"
+                    >
+                      ›
+                    </button>
+                  </div>
+                  <button className="done-btn" onClick={closeNutritionModal}>
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
       </main>
 
       <footer className="site-footer">
