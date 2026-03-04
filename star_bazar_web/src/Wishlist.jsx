@@ -251,7 +251,7 @@ function toggleLike(code) {
                       <div className="product-img-front">
                         <div className="product-img">
                           {p.image ? (
-                            <img src={`http://192.168.29.115:8000/${p.image}`} alt={p.item_code} />
+                            <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} />
                           ) : (
                             p.emoji
                           )}
@@ -318,7 +318,7 @@ function toggleLike(code) {
                 <div className="nutrition-modal-body">
                   <div className="modal-image-container">
                     <img
-                      src={`http://192.168.29.115:8000${
+                      src={`http://groceryv15.localhost:8001${
                         showBack && selectedNutrition.back_image
                           ? selectedNutrition.back_image
                           : selectedNutrition.image

@@ -111,79 +111,176 @@ const goToCheckout = () => {
 };
 
   // DB wishlist state (keeps track of liked / wishlisted products)
-  const [liked, setLiked] = useState({})
+  // const [liked, setLiked] = useState({})
 
-  useEffect(() => {
-    const token = localStorage.getItem("token")
+  // useEffect(() => {
+  //   const token = localStorage.getItem("token")
 
-    if (!token) return
+  //   if (!token) return
 
-    axios.get("http://localhost:8000/api/wishlist/", {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
-    .then(res => {
+  //   axios.get("http://localhost:8000/api/wishlist/", {
+  //     headers: {
+  //       Authorization: `Bearer ${token}`
+  //     }
+  //   })
+  //   .then(res => {
+  //     const likedMap = {}
+  //     res.data.item_codes.forEach(code => {
+  //       likedMap[code] = true
+  //     })
+  //     setLiked(likedMap)
+  //   })
+  //   .catch(err => {
+  //     console.log("Wishlist fetch error:", err)
+  //   })
+
+  // }, [])
+
+  // function toggleLike(item_code) {
+  //   const token = localStorage.getItem("token")
+
+  //   if (!token) {
+  //     navigate("/login")
+  //     return
+  //   }
+  //   axios.post(
+  //     "http://localhost:8000/api/wishlist/toggle/",
+  //     { item_code },
+  //     {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`
+  //       }
+  //     }
+  //   )
+  //   .then(res => {
+
+  //     setLiked(prev => ({
+  //       ...prev,
+  //       [item_code]: res.data.status === "added"
+  //     }))
+
+  //   })
+  //   .catch(err => {
+  //     console.log("Wishlist error:", err)
+  //   })
+  // }
+
+const [liked, setLiked] = useState({})
+
+useEffect(() => {
+  const fetchWishlist = async () => {
+    let access = localStorage.getItem("token")
+    const refresh = localStorage.getItem("refresh")
+
+    if (!access) return
+
+    try {
+      const res = await axios.get(
+        "http://localhost:8000/api/wishlist/",
+        {
+          headers: { Authorization: `Bearer ${access}` }
+        }
+      )
+
       const likedMap = {}
       res.data.item_codes.forEach(code => {
         likedMap[code] = true
       })
       setLiked(likedMap)
-    })
-    .catch(err => {
-      console.log("Wishlist fetch error:", err)
-    })
 
-  }, [])
-  // const [liked, setLiked] = useState(() => {
-  //   try {
-  //     return JSON.parse(localStorage.getItem('liked')) || {}
-  //   } catch (e) {
-  //     return {}
-  //   }
-  // })
+    } catch (err) {
 
-  // function toggleLike(productId) {
-  //   setLiked(prev => {
-  //     const next = { ...prev, [productId]: !prev[productId] }
-  //     try {
-  //       localStorage.setItem('liked', JSON.stringify(next))
-  //     } catch (e) {
-  //       // ignore storage errors
-  //       console.log(e)
-  //     }
-  //     return next
-  //   })
-  // }
+      // 🔥 If access expired
+      if (err.response?.status === 401 && refresh) {
+        try {
+          const refreshRes = await axios.post(
+            "http://localhost:8000/api/token/refresh/",
+            { refresh }
+          )
 
-  function toggleLike(item_code) {
-    const token = localStorage.getItem("token")
+          const newAccess = refreshRes.data.access
+          localStorage.setItem("access", newAccess)
 
-    if (!token) {
-      navigate("/login")
-      return
+          // Retry wishlist
+          const retry = await axios.get(
+            "http://localhost:8000/api/wishlist/",
+            {
+              headers: { Authorization: `Bearer ${newAccess}` }
+            }
+          )
+
+          const likedMap = {}
+          retry.data.item_codes.forEach(code => {
+            likedMap[code] = true
+          })
+          setLiked(likedMap)
+
+        } catch {
+          localStorage.clear()
+          navigate("/login")
+        }
+      }
     }
-    axios.post(
+  }
+
+  fetchWishlist()
+}, [navigate])
+
+async function toggleLike(item_code) {
+  let access = localStorage.getItem("token")
+  const refresh = localStorage.getItem("refresh")
+
+  if (!access) {
+    navigate("/login")
+    return
+  }
+
+  try {
+    const res = await axios.post(
       "http://localhost:8000/api/wishlist/toggle/",
       { item_code },
       {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${access}` }
       }
     )
-    .then(res => {
 
-      setLiked(prev => ({
-        ...prev,
-        [item_code]: res.data.status === "added"
-      }))
+    setLiked(prev => ({
+      ...prev,
+      [item_code]: res.data.status === "added"
+    }))
 
-    })
-    .catch(err => {
-      console.log("Wishlist error:", err)
-    })
+  } catch (err) {
+
+    if (err.response?.status === 401 && refresh) {
+      try {
+        const refreshRes = await axios.post(
+          "http://localhost:8000/api/token/refresh/",
+          { refresh }
+        )
+
+        const newAccess = refreshRes.data.access
+        localStorage.setItem("access", newAccess)
+
+        const retry = await axios.post(
+          "http://localhost:8000/api/wishlist/toggle/",
+          { item_code },
+          {
+            headers: { Authorization: `Bearer ${newAccess}` }
+          }
+        )
+
+        setLiked(prev => ({
+          ...prev,
+          [item_code]: retry.data.status === "added"
+        }))
+
+      } catch {
+        localStorage.clear()
+        navigate("/login")
+      }
+    }
   }
+}
 
 function increaseQty(p) {
   const key = p.item_code
@@ -331,7 +428,7 @@ const handleLogout = () => {
                     <div className="product-img-front">
                       <div className="product-img">
                         {p.image ? (
-                          <img src={`http://192.168.29.115:8000/${p.image}`} alt={p.item_code} />
+                          <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} />
                         ) : (
                           p.emoji
                         )}
@@ -384,7 +481,7 @@ const handleLogout = () => {
                 <div className="nutrition-modal-body">
                   <div className="modal-image-container">
                     <img
-                      src={`http://192.168.29.115:8000${
+                      src={`http://groceryv15.localhost:8001${
                         showBack && selectedNutrition.back_image
                           ? selectedNutrition.back_image
                           : selectedNutrition.image
@@ -501,7 +598,7 @@ const handleLogout = () => {
                     <div className="product-img-front">
                       <div className="product-img">
                         {p.image ? (
-                          <img src={`http://192.168.29.115:8000/${p.image}`} alt={p.item_code} />
+                          <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} />
                         ) : (
                           p.emoji
                         )}

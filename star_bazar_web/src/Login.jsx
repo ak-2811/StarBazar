@@ -29,12 +29,13 @@ function Login() {
       const data = await response.json()
 
       if (response.ok) {
-         console.log("Login response data:", data)
+        // console.log("Login response data:", data)
         localStorage.setItem('token', data.token)
+        localStorage.setItem('refresh',data.refresh)
         localStorage.setItem('user', JSON.stringify({ email: data.email }))
         // Store username for display in header
-        if (data.username) {
-          localStorage.setItem('username', data.username)
+        if (data.full_name) {
+          localStorage.setItem('username', data.full_name)
         }
         navigate('/')
       } else {

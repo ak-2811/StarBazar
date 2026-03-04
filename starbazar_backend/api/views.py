@@ -54,6 +54,7 @@ def signup_view(request):
 
         return Response({
             "token": str(refresh.access_token),
+            "refresh": str(refresh),
             "email": user.email
         })
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -68,7 +69,9 @@ def login_view(request):
 
         return Response({
             "token": str(refresh.access_token),
-            "email": user.email
+            "refresh": str(refresh),
+            "email": user.email,
+            "full_name": f"{user.first_name} {user.last_name}".strip()
         })
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

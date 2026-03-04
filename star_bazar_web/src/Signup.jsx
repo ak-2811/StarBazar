@@ -50,7 +50,7 @@ function Signup() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username: formData.fullName,
+          full_name: formData.fullName,
           email: formData.email,
           password: formData.password
         })
