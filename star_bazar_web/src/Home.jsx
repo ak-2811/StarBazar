@@ -412,55 +412,55 @@ const handleLogout = () => {
           <h3>Best Sellers</h3>
           <div className="seller-list">
             {bestSellers.map(p => (
-              <article key={p.item_code} className="product-card small">
+              <article key={p.item_code} className="product-card-full">
+                <div className="product-img-container large">
+                  <div className="product-img-front">
+                    <div className="product-img">
+                      {p.image ? (
+                        <img src={`http://192.168.29.141:8000/${p.image}`} alt={p.item_code} />
+                      ) : (
+                        p.emoji
+                      )}
+                    </div>
+                    {p.back_image && (
+                      <button
+                        className="info-btn"
+                        onClick={(e) => openNutrition(e, p)}
+                        title="More Info"
+                      >
+                        <i>i</i>
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <button
-                  type="button"
                   className={`heart-btn ${liked[p.item_code] ? 'liked' : ''}`}
                   onClick={(e) => { e.stopPropagation(); toggleLike(p.item_code) }}
-                  title={liked[p.item_code] ? 'Remove from wishlist' : 'Add to wishlist'}
+                  title={liked[p.item_code] ? 'Remove from favorites' : 'Add to favorites'}
                 >
                   {liked[p.item_code] ? '❤' : '🤍'}
                 </button>
-                {/* <div className="product-img">
-                  {p.image ? <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} /> : p.emoji}
-                </div> */}
-                 <div className="product-img-container large">
-                    <div className="product-img-front">
-                      <div className="product-img">
-                        {p.image ? (
-                          <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} />
-                        ) : (
-                          p.emoji
-                        )}
-                      </div>
-
-                      {p.back_image && (
-                        <button
-                          className="info-btn"
-                          onClick={(e) => openNutrition(e, p)}
-                          title="More Info"
-                        >
-                          <i>i</i>
-                        </button>
-                      )}
-                    </div>
+                <div className="product-body-full">
+                  <div className="product-name-full">{p.item_name}</div>
+                  <div className="product-price-full">
+                    ${p.price.toFixed(2)} <span className="unit">/ {p.unit}</span>
                   </div>
-                  <div className="product-body">
-                  <div className="product-name">{p.item_name}</div>
-                  <div className="product-price">${p.price.toFixed(2)} <span className="unit">/ {p.unit}</span></div>
-                  {cart[p.item_code] ? (
-                    <div className="qty-selector">
-                      <button className="qty-btn minus" onClick={() => decreaseQty(p)}>−</button>
-                      <div className='qty-display'>
-                        <span className="qty-value">
-                          {cart[p.item_code].qty}
-                        </span>
-                      </div>
-
-                      <button className="qty-btn plus" onClick={() => increaseQty(p)}>+</button>
-                    </div>
+                  {p.stock === 0 ? (
+                    <button className="add-btn-full disabled-btn" disabled>
+                      Out of Stock
+                    </button>
+                  ) : !cart[p.item_code] ? (
+                    <button className="add-btn-full" onClick={() => increaseQty(p)}>
+                      Add to Cart
+                    </button>
                   ) : (
-                    <button className="add-btn" onClick={() => increaseQty(p)}> Add to Cart </button>
+                    <div className="qty-selector-full">
+                      <button className="qty-btn-full minus" onClick={() => decreaseQty(p)}>−</button>
+                      <div className="qty-display-full">
+                        <span className="qty-value-full">{cart[p.item_code].qty}</span>
+                      </div>
+                      <button className="qty-btn-full plus" onClick={() => increaseQty(p)}>+</button>
+                    </div>
                   )}
                 </div>
               </article>
@@ -481,7 +481,7 @@ const handleLogout = () => {
                 <div className="nutrition-modal-body">
                   <div className="modal-image-container">
                     <img
-                      src={`http://groceryv15.localhost:8001${
+                      src={`http://192.168.29.141:8000${
                         showBack && selectedNutrition.back_image
                           ? selectedNutrition.back_image
                           : selectedNutrition.image
@@ -553,7 +553,7 @@ const handleLogout = () => {
                   {liked[p.item_code] ? '❤' : '🤍'}
                 </button> */}
                 <div className="offer-badge">Special Deal</div>
-                <div className="offer-img">{p.image ? <img src={`http://groceryv15.localhost:8001${p.image}`} alt={p.item_code} /> : p.emoji}</div>
+                <div className="offer-img">{p.image ? <img src={`http://192.168.29.141:8000/${p.image}`} alt={p.item_code} /> : p.emoji}</div>
                 <div className="offer-body">
                   <div className="offer-name">{p.item_name}</div>
                   <div className="price-section">
@@ -584,53 +584,55 @@ const handleLogout = () => {
           <h3>Shop All Products</h3>
           <div className="grid">
             {shopallProducts.map(p => (
-              <article key={p.item_code} className="product-card">
+              <article key={p.item_code} className="product-card-full">
+                <div className="product-img-container large">
+                  <div className="product-img-front">
+                    <div className="product-img">
+                      {p.image ? (
+                        <img src={`http://192.168.29.141:8000/${p.image}`} alt={p.item_code} />
+                      ) : (
+                        p.emoji
+                      )}
+                    </div>
+                    {p.back_image && (
+                      <button
+                        className="info-btn"
+                        onClick={(e) => openNutrition(e, p)}
+                        title="More Info"
+                      >
+                        <i>i</i>
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <button
-                  type="button"
                   className={`heart-btn ${liked[p.item_code] ? 'liked' : ''}`}
                   onClick={(e) => { e.stopPropagation(); toggleLike(p.item_code) }}
-                  title={liked[p.item_code] ? 'Remove from wishlist' : 'Add to wishlist'}
+                  title={liked[p.item_code] ? 'Remove from favorites' : 'Add to favorites'}
                 >
                   {liked[p.item_code] ? '❤' : '🤍'}
                 </button>
-                {/* <div className="product-img large">{p.image ? <img src={`http://groceryv15.localhost:8001${p.image}`} alt={p.item_code} /> : p.emoji}</div> */}
-                <div className="product-img-container large">
-                    <div className="product-img-front">
-                      <div className="product-img">
-                        {p.image ? (
-                          <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} />
-                        ) : (
-                          p.emoji
-                        )}
-                      </div>
-
-                      {p.back_image && (
-                        <button
-                          className="info-btn"
-                          onClick={(e) => openNutrition(e, p)}
-                          title="More Info"
-                        >
-                          <i>i</i>
-                        </button>
-                      )}
-                    </div>
+                <div className="product-body-full">
+                  <div className="product-name-full">{p.item_name}</div>
+                  <div className="product-price-full">
+                    ${p.price.toFixed(2)} <span className="unit">/ {p.unit}</span>
                   </div>
-                <div className="product-body">
-                  <div className="product-name">{p.item_name}</div>
-                  <div className="product-price">${p.price.toFixed(2)} <span className="unit">/ {p.unit}</span></div>
-                  {cart[p.item_code] ? (
-                    <div className="qty-selector">
-                      <button className="qty-btn minus" onClick={() => decreaseQty(p)}>−</button>
-                      <div className='qty-display'>
-                        <span className="qty-value">
-                          {cart[p.item_code].qty}
-                        </span>
-                      </div>
-
-                      <button className="qty-btn plus" onClick={() => increaseQty(p)}>+</button>
-                    </div>
+                  {p.stock === 0 ? (
+                    <button className="add-btn-full disabled-btn" disabled>
+                      Out of Stock
+                    </button>
+                  ) : !cart[p.item_code] ? (
+                    <button className="add-btn-full" onClick={() => increaseQty(p)}>
+                      Add to Cart
+                    </button>
                   ) : (
-                    <button className="add-btn" onClick={() => increaseQty(p)}> Add to Cart </button>
+                    <div className="qty-selector-full">
+                      <button className="qty-btn-full minus" onClick={() => decreaseQty(p)}>−</button>
+                      <div className="qty-display-full">
+                        <span className="qty-value-full">{cart[p.item_code].qty}</span>
+                      </div>
+                      <button className="qty-btn-full plus" onClick={() => increaseQty(p)}>+</button>
+                    </div>
                   )}
                 </div>
               </article>
