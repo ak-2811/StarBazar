@@ -89,7 +89,9 @@ const cartItems = updatedCart.map(item => ({
   quantity: item.qty,
   subtotal: item.subtotal,
   original_price: item.item.price,
-  is_discounted: item.is_discounted
+  is_discounted: item.is_discounted,
+  image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `http://192.168.29.141:8000${item.item.image}`) : null,
+  item_code: item.item.item_code
 }));
 // Totals
 const subtotal = updatedCart.reduce(
@@ -352,87 +354,8 @@ function decreaseQty(product) {
           </div>
         ) : (
           <div className="checkout-wrapper">
-            {/* Left Column - Order Summary with Products */}
-            <aside className="checkout-summary-section">
-              <div className="order-summary">
-                <h3>Your Order</h3>
-
-                <div className="cart-items-container">
-                  <div className="cart-items-header">
-                    <span>Product Details</span>
-                    <span>Qty</span>
-                    <span>Price</span>
-                  </div>
-                  <div className="cart-items">
-                    {cartItems.map((item, index) => (
-                      <div key={index} className="cart-item">
-                        <div className="item-info">
-                          <div className="item-emoji">{item.emoji}</div>
-                          <div className="item-details">
-                            <div className="item-name">{item.name}</div>
-                            <div className="item-unit">${item.price.toFixed(2)} per {item.unit}</div>
-                                {item.is_discounted && (
-                                    <div style={{color: "green", fontSize: "0.85rem", fontWeight: "600"}}>
-                                    Offer Applied 🎉
-                                    <div style={{color:"#888", fontSize:"0.8rem"}}>
-                                        Original: ${item.original_price.toFixed(2)}
-                                    </div>
-                                    </div>
-                                )}
-                          </div>
-                        </div>
-                        <div className="item-qty">
-                          <div className="qty-selector compact">
-                            <button className="qty-btn minus" onClick={() => decreaseQty(item.id)}>−</button>
-                            <div className="qty-display">
-                              <span className="qty-value">{item.quantity}</span>
-                            </div>
-                            <button className="qty-btn plus" onClick={() => increaseQty(item.id)}>+</button>
-                          </div>
-                        </div>
-                        <div className="item-price">${item.subtotal.toFixed(2)}</div>
-                        <button 
-                          className="item-remove"
-                          onClick={() => handleRemoveItem(item.id)}
-                          title="Remove item"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="summary-details">
-                  <div className="summary-row">
-                    <span>Subtotal</span>
-                    <strong>${subtotal.toFixed(2)}</strong>
-                  </div>
-                  <div className="summary-row">
-                    <span>Shipping</span>
-                    <strong>${shippingCost.toFixed(2)}</strong>
-                  </div>
-                  <div className="summary-row">
-                    <span>Tax (8%)</span>
-                    <strong>${tax.toFixed(2)}</strong>
-                  </div>
-                  <div className="summary-divider"></div>
-                  <div className="summary-row total">
-                    <span>Total</span>
-                    <strong>${total.toFixed(2)}</strong>
-                  </div>
-                </div>
-
-                <div className="shipping-info">
-                  <p>📦 Free shipping on orders over $50</p>
-                  <p>🔒 Secure checkout with SSL encryption</p>
-                  <p>✓ 100% satisfaction guaranteed</p>
-                </div>
-              </div>
-            </aside>
-
-            {/* Right Column - Payment Form */}
-            <section className="checkout-form-section">
+            {/* Left Column - Payment Form */}
+            <section className="checkout-form-section left-form">
               <form onSubmit={handleSubmitOrder}>
                 {/* Personal Information - Always visible */}
                 <div className="form-section">
@@ -588,13 +511,38 @@ function decreaseQty(product) {
                     <div className="store-pickup-info-form">
                       <div className="pickup-icon">🏪</div>
                       <h4>Store Pickup Details</h4>
-                      <div className="store-address">
-                        <p><strong>StarBazar Main Store</strong></p>
-                        <p>📍 123 Main Street</p>
-                        <p>New York, NY 10001, USA</p>
-                        <p>📞 +1 (555) 123-4567</p>
-                        <p>🕐 Mon-Sun: 9:00 AM - 9:00 PM</p>
+                      
+                      {/* Google Map Embed */}
+                      <div className="map-container">
+                        <iframe
+                          width="100%"
+                          height="300"
+                          style={{ border: 0, borderRadius: '8px' }}
+                          loading="lazy"
+                          allowFullScreen=""
+                          referrerPolicy="no-referrer-when-downgrade"
+                          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3350.8891234567!2d-79.7968624!3d34.1914411!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x885567bca62ddb6d%3A0x81cae9f6181dfde4!2sStar%20Bazaar!5e0!3m2!1sen!2sus!4v1709658000000"
+                        ></iframe>
                       </div>
+
+                      {/* Store Details */}
+                      <div className="store-address">
+                        <p><strong>Star Bazaar</strong></p>
+                        <p>📍 1603 W Palmetto</p>
+                        <p>St Florence, SC 29501, USA</p>
+                        <p>📞 +1 (843) 799-1099</p>
+                        <p>🕐 Mon-Sun: 10:00 AM - 8:00 PM</p>
+                      </div>
+
+                      {/* View on Google Maps Button */}
+                      <button
+                        type="button"
+                        className="btn-view-maps"
+                        onClick={() => window.open('https://www.google.com/maps/place/Star+Bazaar/@34.1914411,-79.7968624,17z/data=!3m1!4b1!4m6!3m5!1s0x885567bca62ddb6d:0x81cae9f6181dfde4!8m2!3d34.1914411!4d-79.7968624!16s%2Fg%2F11j3x14mkc?hl=en&entry=ttu&g_ep=EgoyMDI2MDMwMi4wIKXMDSoASAFQAw%3D%3D', '_blank')}
+                      >
+                        📍 View Full Map
+                      </button>
+
                       <p className="pickup-note">Your order will be ready within 2-3 hours. Please bring a valid ID and order confirmation.</p>
                     </div>
                   </div>
@@ -660,6 +608,88 @@ function decreaseQty(product) {
                 </button>
               </form>
             </section>
+
+            {/* Right Column - Order Summary with Products */}
+            <aside className="checkout-summary-section right-summary">
+              <div className="order-summary">
+                <h3>Your Order</h3>
+
+                <div className="cart-items-container">
+                  <div className="cart-items">
+                    {cartItems.map((item, index) => (
+                      <div key={index} className="cart-item-right">
+                        <div className="item-image-wrapper">
+                          {item.image ? (
+                            <div className="item-image-container">
+                              <img src={item.image} alt={item.name} className="item-image" />
+                            </div>
+                          ) : (
+                            <div className="item-emoji">{item.emoji}</div>
+                          )}
+                        </div>
+                        
+                        <div className="item-middle-section">
+                          <div className="item-details-right">
+                            <div className="item-name-right">{item.name}</div>
+                            <div className="item-unit-right">{item.unit}</div>
+                                {item.is_discounted && (
+                                    <div style={{color: "green", fontSize: "0.85rem", fontWeight: "600", marginTop: "0.3rem"}}>
+                                    Offer Applied 🎉
+                                    <div style={{color:"#888", fontSize:"0.8rem"}}>
+                                        Original: ${item.original_price.toFixed(2)}
+                                    </div>
+                                    </div>
+                                )}
+                          </div>
+                          <div className="qty-controls-bottom">
+                            <button className="qty-btn minus" onClick={() => decreaseQty(item.id)}>−</button>
+                            <span className="qty-display-right">{item.quantity}</span>
+                            <button className="qty-btn plus" onClick={() => increaseQty(item.id)}>+</button>
+                          </div>
+                        </div>
+                        
+                        <div className="item-right-actions">
+                          <div className="item-price-right">${item.price.toFixed(2)}</div>
+                          <button 
+                            className="item-remove"
+                            onClick={() => handleRemoveItem(item.id)}
+                            title="Remove item"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="summary-details">
+                  <div className="summary-row">
+                    <span>Subtotal</span>
+                    <strong>${subtotal.toFixed(2)}</strong>
+                  </div>
+                  <div className="summary-row">
+                    <span>Shipping</span>
+                    <strong>Free</strong>
+                  </div>
+                  <div className="summary-row">
+                    <span>Tax (8%)</span>
+                    <strong>${tax.toFixed(2)}</strong>
+                  </div>
+                  <div className="summary-divider"></div>
+                  <div className="summary-row total">
+                    <span>Total</span>
+                    <strong>${total.toFixed(2)}</strong>
+                  </div>
+                </div>
+
+                <div className="shipping-info">
+                  <p>📦 Free shipping on orders over $50</p>
+                  <p>🔒 Secure checkout with SSL encryption</p>
+                  <p>✓ 100% satisfaction guaranteed</p>
+                </div>
+              </div>
+            </aside>
           </div>
         )}
       </main>
