@@ -3,6 +3,7 @@ import React from 'react'
 import './Checkout.css'
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import axios from 'axios'
 
 function Checkout({ onNavigate, onClearCart }) {
 
@@ -11,6 +12,7 @@ function Checkout({ onNavigate, onClearCart }) {
 
 // Get cart object from localStorage and keep it in state so UI updates when qty changes
 const [cartObject, setCartObject] = useState(() => JSON.parse(localStorage.getItem("cart")) || {});
+
 // keep localStorage in sync if other tabs modify it
 useEffect(() => {
   const handler = () => {
@@ -90,7 +92,7 @@ const cartItems = updatedCart.map(item => ({
   subtotal: item.subtotal,
   original_price: item.item.price,
   is_discounted: item.is_discounted,
-  image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `http://192.168.29.141:8000${item.item.image}`) : null,
+  image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `http://groceryv15.localhost:8001${item.item.image}`) : null,
   item_code: item.item.item_code
 }));
 // Totals
@@ -100,8 +102,29 @@ const subtotal = updatedCart.reduce(
 );
 
 const shippingCost = cart.length > 0 ? 5.99 : 0;
-const tax = subtotal * 0.08;
-const total = subtotal + shippingCost + tax;
+// const tax = subtotal * 0.08;
+const tax = updatedCart.reduce((sum, item) => {
+
+  const price = item.subtotal;
+
+  const product = item.item;
+
+  let rate = 0;
+
+  if (product.food_stamp) {
+    rate = 0.02;
+  }
+  else if (product.non_food) {
+    rate = 0.08;
+  }
+  else if (product.tobacco) {
+    rate = 0.05;
+  }
+
+  return sum + (price * rate);
+
+}, 0);
+const total = subtotal + tax;
 
 // Logic to remove the item
 const handleRemoveItem = (itemCode) => {
@@ -160,6 +183,26 @@ function decreaseQty(product) {
     cardCVV: ''
   });
 
+  
+useEffect(() => {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+
+  axios.get("http://localhost:8000/api/profile/", {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  .then(res => {
+    setFormData(prev => ({
+      ...prev,
+      firstName: res.data.first_name || "",
+      lastName: res.data.last_name || "",
+      email: res.data.email || ""
+    }));
+  })
+  .catch(err => console.log(err));
+
+}, []);
+
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('credit-card');
@@ -172,7 +215,7 @@ function decreaseQty(product) {
     }));
   };
 
-  const handleSubmitOrder = (e) => {
+  const handleSubmitOrder = async (e) => {
     e.preventDefault();
 
     if (!formData.firstName || !formData.lastName || !formData.email) {
@@ -180,28 +223,48 @@ function decreaseQty(product) {
       return;
     }
 
-     // Validation for delivery address (only if credit-card payment)
-    if (paymentMethod === 'credit-card') {
-      if (!formData.address || !formData.city || !formData.zipCode) {
-        alert('Please fill in all delivery address fields')
-        return
-      }
-      if (!formData.cardNumber || !formData.cardExpiry || !formData.cardCVV) {
-        alert('Please fill in all payment fields')
-        return
-      }
-    }
-
     if (updatedCart.length === 0) {
       alert('Your cart is empty');
       return;
     }
 
-    const newOrderNumber = `SB${Date.now()}`;
-    setOrderNumber(newOrderNumber);
-    setOrderPlaced(true);
+    try {
 
-    if (onClearCart) onClearCart();
+      const items = updatedCart.map(item => ({
+        item_code: item.item.item_code,
+        qty: item.qty,
+        // rate: item.subtotal / item.qty
+        original_price:item.item.price,
+        amount: item.subtotal
+
+      }));
+      const order_id = crypto.randomUUID();
+
+      const payload = {
+        customer_name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        items: items,
+        tax:tax,
+        order_id:order_id
+      };
+
+      const res = await axios.post(
+        "http://localhost:8000/api/create-sales-invoice/",
+        payload
+      );
+
+      console.log("Invoice created:", res.data);
+
+      const newOrderNumber = res.data.invoice;
+      setOrderNumber(newOrderNumber);
+      setOrderPlaced(true);
+
+      if (onClearCart) onClearCart();
+
+    } catch (error) {
+      console.error(error);
+      alert("Order failed");
+    }
   };
 
   const handleContinueShopping = () => {
@@ -673,7 +736,7 @@ function decreaseQty(product) {
                     <strong>Free</strong>
                   </div>
                   <div className="summary-row">
-                    <span>Tax (8%)</span>
+                    <span>Tax Payable</span>
                     <strong>${tax.toFixed(2)}</strong>
                   </div>
                   <div className="summary-divider"></div>

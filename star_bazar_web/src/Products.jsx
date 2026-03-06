@@ -206,14 +206,22 @@ const goToCheckout = () => {
   
   function increaseQty(product) {
   const key = product.item_code
-  console.log("Current Product Code:", product.item_code)
-  setCart(prev => ({
-    ...prev,
-    [key]: {
-      item: product,
-      qty: (prev[key]?.qty || 0) + 1
+
+  setCart(prev => {
+    const currentQty = prev[key]?.qty || 0
+    const stock = product.stock || 0
+
+    // 🚫 stop if stock reached
+    if (currentQty >= stock) return prev
+
+    return {
+      ...prev,
+      [key]: {
+        item: product,
+        qty: currentQty + 1
+      }
     }
-  }))
+  })
 }
 
 function decreaseQty(product) {
@@ -396,7 +404,7 @@ function decreaseQty(product) {
     const formatted = res.data.products.map((item, index) => ({
       id: index + 1,
       item_code: item.item_code,
-      name: item.item_name,
+      item_name: item.item_name,
       price: parseFloat(item.price),
       unit: `/ ${item.unit}`,
       category: item.category || "General",
@@ -404,7 +412,10 @@ function decreaseQty(product) {
       image: item.image,
       back_image: item.back_image,
       stock: item.stock,
-      availability: item.stock > 0 ? "in-stock" : "out-of-stock"
+      availability: item.stock > 0 ? "in-stock" : "out-of-stock",
+      food_stamp: item.food_stamp,
+      non_food: item.non_food,
+      tobacco: item.tobacco,
     }))
 
     setAllProducts(formatted)
@@ -677,8 +688,8 @@ const handleLogout = () => {
                     {liked[product.item_code] ? '❤' : '🤍'}
                   </button>
                   <div className="product-body-full">
-                    <div className="product-name-full">{product.name}</div>
-                    <div className="product-brand">{product.brand}</div>
+                    <div className="product-name-full">{product.item_name}</div>
+                    {/* <div className="product-brand">{product.brand}</div> */}
                     <div className="product-price-full">
                       ${product.price.toFixed(2)} <span className="unit">{product.unit}</span>
                     </div>
@@ -699,7 +710,7 @@ const handleLogout = () => {
                         <div className="qty-display-full">
                           <span className="qty-value-full">{cart[product.item_code].qty}</span>
                         </div>
-                        <button className="qty-btn-full plus" onClick={() => increaseQty(product)}>+</button>
+                        <button className="qty-btn-full plus" onClick={() => increaseQty(product)}  disabled={(cart[product.item_code]?.qty || 0) >= product.stock}>+</button>
                         {/* <button className="confirm-add-btn-full" onClick={() => handleConfirmAddToCart(product)}>Add to Cart</button> */}
                       </div>
                     )}

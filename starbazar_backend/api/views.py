@@ -75,6 +75,18 @@ def login_view(request):
         })
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_profile(request):
+    user = request.user
+
+    return Response({
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email
+    })
+
+
 
 FRAPPE_URL = "http://172.28.180.147:8001"
 API_KEY = "823008797018d0a"
@@ -84,6 +96,133 @@ HEADERS = {
     "Authorization": f"token {API_KEY}:{API_SECRET}",
     "Host": "groceryv15.localhost"
 }
+
+
+def frappe_get_invoice_by_order(order_id):
+
+    url = f"{FRAPPE_URL}/api/resource/Sales Invoice"
+    
+    params = {
+        "filters": f'[["Sales Invoice","custom_order_id","=","{order_id}"]]',
+        "fields": '["name"]'
+    }
+
+    r = requests.get(url, headers=HEADERS, params=params).json()
+
+    data = r.get("data", [])
+    return data[0]["name"] if data else None
+
+# Creating Sales Invoice from the order.
+@api_view(['POST'])
+def create_sales_invoice(request):
+
+    items = request.data.get("items", [])
+    customer_name = "Online Order"
+
+    if not items:
+        return Response({"error": "No items provided"}, status=400)
+
+    invoice_items = []
+    tax = float(request.data.get("tax", 0))
+    total_amount = tax
+
+    for i in items:
+        qty = int(i["qty"])
+        amount = float(i["amount"])
+        item_code = i["item_code"]
+
+        # calculate base rounded rate
+        base_rate = round(amount / qty, 2)
+
+        # compute correction so total matches amount
+        running_total = base_rate * qty
+        diff = round(running_total - amount, 2)
+
+        if abs(diff) > 0 and qty > 1:
+            # first (qty-1) items at base_rate
+            invoice_items.append({
+                "item_code": item_code,
+                "qty": qty - 1,
+                "rate": base_rate,
+                "warehouse": "Stores - A"
+            })
+
+            # last item adjusted
+            invoice_items.append({
+                "item_code": item_code,
+                "qty": 1,
+                "rate": round(base_rate - diff, 2),
+                "warehouse": "Stores - A"
+            })
+        else:
+            invoice_items.append({
+                "item_code": item_code,
+                "qty": qty,
+                "rate": base_rate,
+                "warehouse": "Stores - A"
+            })
+
+        total_amount += amount
+    
+    order_id = request.data.get("order_id")
+
+    existing_invoice = frappe_get_invoice_by_order(order_id)
+    if existing_invoice:
+        return Response({"invoice": existing_invoice})
+
+    payload = {
+        "doctype": "Sales Invoice",
+        "customer": customer_name,
+        "company": "Akshat",
+
+        "currency": "USD",
+        "selling_price_list": "Standard Selling",
+        "price_list_currency": "USD",
+        "plc_conversion_rate": 1,
+
+        "is_pos": 1,
+        "update_stock": 1,
+        "ignore_pricing_rule": 1,
+        "custom_order_id": order_id,
+
+        "items": invoice_items,
+
+        "payments": [
+            {
+                "mode_of_payment": "Credit Card",
+                "amount": total_amount
+            }
+        ]
+    }
+
+    url = f"{FRAPPE_URL}/api/resource/Sales Invoice"
+
+    response = requests.post(
+        url,
+        headers=HEADERS,
+        json=payload
+    )
+
+    data = response.json()
+
+    if "data" not in data:
+        return Response(data, status=400)
+    
+    invoice_name = data["data"]["name"]
+    
+    # submit invoice
+    submit_url = f"{FRAPPE_URL}/api/resource/Sales Invoice/{invoice_name}"
+
+    submit_response = requests.put(
+        submit_url,
+        headers=HEADERS,
+        json={"docstatus": 1}
+    )
+
+    return Response({
+        "message": "Invoice created",
+        "invoice": invoice_name
+    })
 
 
 @api_view(['GET'])
@@ -136,7 +275,7 @@ def all_products(request):
     # 🔥 1️⃣ Fetch RANDOM 24 items
     items_url = (
         f"{FRAPPE_URL}/api/resource/Item?"
-        f'fields=["name","item_name","image","stock_uom","item_group"]'
+        f'fields=["name","item_name","image","stock_uom","item_group","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
         f"&limit_page_length=100"
         f"&order_by=RAND()"
     )
@@ -318,6 +457,9 @@ def all_products(request):
             "image": item["image"],
             "back_image":back_image,
             "unit": item["stock_uom"],
+            "food_stamp": item.get("custom_food_stamp_enable"),
+            "non_food": item.get("custom_non_food"),
+            "tobacco": item.get("custom_tobaco"),
             "price": price_map.get(item["name"], 0),
             "category": item["item_group"],
             "brand": None,
@@ -347,7 +489,7 @@ def wishlist_products(request):
     items_url = (
         f"{FRAPPE_URL}/api/resource/Item?"
         f'filters=[["Item","name","in",{item_codes_json}]]'
-        f'&fields=["name","item_name","image","stock_uom"]'
+        f'&fields=["name","item_name","image","stock_uom","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
     )
 
     items_response = requests.get(items_url, headers=HEADERS).json()
@@ -473,6 +615,9 @@ def wishlist_products(request):
             "image": item["image"],
             "back_image": back_image,
             "unit": item["stock_uom"],
+            "food_stamp": item.get("custom_food_stamp_enable"),
+            "non_food": item.get("custom_non_food"),
+            "tobacco": item.get("custom_tobaco"),
             "price": price_map.get(code, 0),
             "stock": stock_qty,
             "availability": "in-stock" if stock_qty > 0 else "out-of-stock"
@@ -500,7 +645,7 @@ def best_sellers(request):
     items_url = (
         f"{FRAPPE_URL}/api/resource/Item?"
         f'filters=[["Item","name","in",{item_codes_json}]]'
-        f'&fields=["name","item_name","image","stock_uom"]'
+        f'&fields=["name","item_name","image","stock_uom","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
     )
 
     items_response = requests.get(items_url, headers=HEADERS).json()
@@ -568,6 +713,9 @@ def best_sellers(request):
         "image": item["image"],
         "back_image": back_image,
         "unit": item["stock_uom"],
+        "food_stamp": item.get("custom_food_stamp_enable"),
+        "non_food": item.get("custom_non_food"),
+        "tobacco": item.get("custom_tobaco"),
         "price": price_map.get(item["name"], 0)
     })
 
@@ -593,7 +741,7 @@ def shop_all_product(request):
     items_url = (
         f"{FRAPPE_URL}/api/resource/Item?"
         f'filters=[["Item","name","in",{item_codes_json}]]'
-        f'&fields=["name","item_name","image","stock_uom"]'
+        f'&fields=["name","item_name","image","stock_uom","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
     )
 
     items_response = requests.get(items_url, headers=HEADERS).json()
@@ -661,6 +809,9 @@ def shop_all_product(request):
             "image": item["image"],
             "back_image": back_image,
             "unit": item["stock_uom"],
+            "food_stamp": item.get("custom_food_stamp_enable"),
+            "non_food": item.get("custom_non_food"),
+            "tobacco": item.get("custom_tobaco"),
             "price": price_map.get(item["name"], 0)
         })
 
@@ -724,7 +875,7 @@ def pricing_offers(request):
             f"{FRAPPE_URL}/api/resource/Item/{item_code}",
             headers=HEADERS,
             params={
-                "fields": json.dumps(["item_name", "image", "stock_uom"])
+                "fields": json.dumps(["item_name", "image", "stock_uom","custom_food_stamp_enable","custom_non_food","custom_tobaco"])
             }
         ).json()
 
@@ -754,6 +905,9 @@ def pricing_offers(request):
             "image": item_data.get("image"),
             "unit": item_data.get("stock_uom"),
             "original_price": original_price,
+            "food_stamp": item_data.get("custom_food_stamp_enable"),
+            "non_food": item_data.get("custom_non_food"),
+            "tobacco": item_data.get("custom_tobaco"),
             "price": offer_price,
             "min_qty": qty,
             "title": scheme.get("scheme_name"),
