@@ -11,7 +11,37 @@ function Wishlist() {
   const[specialOffers,setSpecialOffers]=useState([])
   const [selectedNutrition, setSelectedNutrition] = useState(null)
   const [showBack, setShowBack] = useState(false)
+  const [currentUser, setCurrentUser] = useState(null)
+  const [showUserMenu, setShowUserMenu] = useState(false)
   const navigate = useNavigate()
+
+  // Fetch current user
+  useEffect(() => {
+    const checkUser = () => {
+      const token = localStorage.getItem("token")
+      const username = localStorage.getItem("username")
+      if (token && username) {
+        setCurrentUser(username)
+      } else {
+        setCurrentUser(null)
+      }
+    }
+    checkUser()
+    window.addEventListener("storage", checkUser)
+    window.addEventListener("focus", checkUser)
+    return () => {
+      window.removeEventListener("storage", checkUser)
+      window.removeEventListener("focus", checkUser)
+    }
+  }, [])
+
+  const handleLogout = () => {
+    localStorage.removeItem("token")
+    localStorage.removeItem("username")
+    setCurrentUser(null)
+    setShowUserMenu(false)
+    navigate("/login")
+  }
 
   // Getting the offer products
   useEffect(() => {
@@ -208,6 +238,48 @@ function toggleLike(code) {
           <nav className="header-actions">
             <button className="icon-btn" onClick={() => navigate('/wishlist')}>❤</button>
             <button className="icon-btn" onClick={() => goToCheckout()}>🛒 <span className="cart-count">{Object.values(cart).reduce((total, item) => total + item.qty, 0)}</span></button>
+
+            {currentUser ? (
+              <div className="user-profile-container">
+                <button
+                  className="user-profile-btn"
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  title={currentUser}
+                >
+                  <span className="user-avatar">👤</span>
+                  <span className="user-name">{currentUser}</span>
+                  <span className="dropdown-arrow">▼</span>
+                </button>
+
+                {showUserMenu && (
+                  <div className="user-dropdown-menu">
+                    <button
+                      className="dropdown-item"
+                      onClick={() => {
+                        navigate('/orders')
+                        setShowUserMenu(false)
+                      }}
+                    >
+                      � Your Orders
+                    </button>
+                    <div className="dropdown-divider"></div>
+                    <button
+                      className="dropdown-item logout"
+                      onClick={handleLogout}
+                    >
+                      🚪 Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                className="icon-btn login-btn"
+                onClick={() => navigate('/login')}
+              >
+                🔐 Login
+              </button>
+            )}
           </nav>
         </div>
       </header>
@@ -237,26 +309,16 @@ function toggleLike(code) {
             ) : (
             <div className="grid">
                 {products.map(p => (
-                <article key={p.item_code} className="product-card">
-                    <button
-                    type="button"
-                    className={`heart-btn ${likedMap[p.item_code] ? 'liked' : ''}`}
-                    onClick={(e) => { e.stopPropagation(); toggleLike(p.item_code) }}
-                    title={likedMap[p.item_code] ? 'Remove from wishlist' : 'Add to wishlist'}
-                    >
-                    {likedMap[p.item_code] ? '❤' : '🤍'}
-                    </button>
-
+                <article key={p.item_code} className="product-card-full">
                     <div className="product-img-container large">
                       <div className="product-img-front">
                         <div className="product-img">
                           {p.image ? (
-                            <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} />
+                            <img src={`http://192.168.29.141:8000/${p.image}`} alt={p.item_code} />
                           ) : (
                             p.emoji
                           )}
                         </div>
-
                         {p.back_image && (
                           <button
                             className="info-btn"
@@ -268,35 +330,35 @@ function toggleLike(code) {
                         )}
                       </div>
                     </div>
-
-                    <div className="product-body">
-                    <div className="product-name">{p.item_name}</div>
-
-                    <div className="product-price">
+                    <button
+                      className={`heart-btn ${likedMap[p.item_code] ? 'liked' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); toggleLike(p.item_code) }}
+                      title={likedMap[p.item_code] ? 'Remove from wishlist' : 'Add to wishlist'}
+                    >
+                      {likedMap[p.item_code] ? '❤' : '🤍'}
+                    </button>
+                    <div className="product-body-full">
+                      <div className="product-name-full">{p.item_name}</div>
+                      <div className="product-price-full">
                         ${p.price.toFixed(2)} <span className="unit">/ {p.unit}</span>
-                    </div>
-
-                    {p.availability === 'out-of-stock' ? (
-                        <button className="add-btn disabled-btn" disabled>
-                        Out of Stock
+                      </div>
+                      {p.availability === 'out-of-stock' ? (
+                        <button className="add-btn-full disabled-btn" disabled>
+                          Out of Stock
                         </button>
-                    ) : cart[p.item_code] ? (
-                        <div className="qty-selector">
-                        <button className="qty-btn minus" onClick={() => decreaseQty(p)}>−</button>
-
-                        <div className="qty-display">
-                            <span className="qty-value">
-                            {cart[p.item_code]?.qty || 0}
-                            </span>
-                        </div>
-
-                        <button className="qty-btn plus" onClick={() => increaseQty(p)}>+</button>
-                        </div>
-                    ) : (
-                        <button className="add-btn" onClick={() => increaseQty(p)}>
-                        Add to Cart
+                      ) : !cart[p.item_code] ? (
+                        <button className="add-btn-full" onClick={() => increaseQty(p)}>
+                          Add to Cart
                         </button>
-                    )}
+                      ) : (
+                        <div className="qty-selector-full">
+                          <button className="qty-btn-full minus" onClick={() => decreaseQty(p)}>−</button>
+                          <div className="qty-display-full">
+                            <span className="qty-value-full">{cart[p.item_code].qty}</span>
+                          </div>
+                          <button className="qty-btn-full plus" onClick={() => increaseQty(p)}>+</button>
+                        </div>
+                      )}
                     </div>
                 </article>
                 ))}
@@ -318,7 +380,7 @@ function toggleLike(code) {
                 <div className="nutrition-modal-body">
                   <div className="modal-image-container">
                     <img
-                      src={`http://groceryv15.localhost:8001${
+                      src={`http://192.168.29.141:8000/${
                         showBack && selectedNutrition.back_image
                           ? selectedNutrition.back_image
                           : selectedNutrition.image

@@ -357,11 +357,11 @@ const handleLogout = () => {
                     <button 
                       className="dropdown-item"
                       onClick={() => {
-                        goToCheckout()
+                        navigate('/orders')
                         setShowUserMenu(false)
                       }}
                     >
-                      🛒 Checkout
+                      � Your Orders
                     </button>
                     <div className="dropdown-divider"></div>
                     <button 
@@ -417,7 +417,7 @@ const handleLogout = () => {
                   <div className="product-img-front">
                     <div className="product-img">
                       {p.image ? (
-                        <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} />
+                        <img src={`http://192.168.29.141:8000/${p.image}`} alt={p.item_code} />
                       ) : (
                         p.emoji
                       )}
@@ -481,7 +481,7 @@ const handleLogout = () => {
                 <div className="nutrition-modal-body">
                   <div className="modal-image-container">
                     <img
-                      src={`http://groceryv15.localhost:8001${
+                      src={`http://192.168.29.141:8000${
                         showBack && selectedNutrition.back_image
                           ? selectedNutrition.back_image
                           : selectedNutrition.image
@@ -553,7 +553,7 @@ const handleLogout = () => {
                   {liked[p.item_code] ? '❤' : '🤍'}
                 </button> */}
                 <div className="offer-badge">Special Deal</div>
-                <div className="offer-img">{p.image ? <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} /> : p.emoji}</div>
+                <div className="offer-img">{p.image ? <img src={`http://192.168.29.141:8000/${p.image}`} alt={p.item_code} /> : p.emoji}</div>
                 <div className="offer-body">
                   <div className="offer-name">{p.item_name}</div>
                   <div className="price-section">
@@ -589,7 +589,7 @@ const handleLogout = () => {
                   <div className="product-img-front">
                     <div className="product-img">
                       {p.image ? (
-                        <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} />
+                        <img src={`http://192.168.29.141:8000/${p.image}`} alt={p.item_code} />
                       ) : (
                         p.emoji
                       )}
