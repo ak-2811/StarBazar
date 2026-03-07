@@ -289,7 +289,7 @@
 
 /* Form Sections */
 .form-section {
-  margin-bottom: 2rem;
+  margin-bottom: 1.8rem;
   padding-bottom: 1.5rem;
   border-bottom: 1px solid var(--border-color);
 }
@@ -299,27 +299,29 @@
 }
 
 .section-header {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.2rem;
 }
 
 .section-header h2 {
   color: var(--accent);
-  font-size: 1.3rem;
+  font-size: 1.2rem;
+  margin: 0;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: -0.2px;
+}
+
+.section-header h3 {
+  color: var(--accent);
+  font-size: 1.05rem;
   margin: 0;
   font-weight: 700;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.section-header h3 {
-  color: var(--accent);
-  font-size: 1.1rem;
-  margin: 0;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  letter-spacing: -0.2px;
 }
 
 /* Delivery Options */
@@ -393,10 +395,13 @@
 
 /* Payment Note */
 .payment-note {
-  color: var(--muted);
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
+  color: #6b7280;
+  font-size: 0.85rem;
+  margin-bottom: 1.2rem;
   font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 /* Store Pickup Info in Form */
@@ -454,44 +459,54 @@
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
+  gap: 1.2rem;
+  margin-bottom: 1.2rem;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
+  margin-bottom: 1.2rem;
 }
 
 .form-group.full {
   grid-column: 1 / -1;
+  margin-bottom: 1.2rem;
 }
 
 .form-group label {
-  font-weight: 600;
-  margin-bottom: 0.6rem;
-  color: var(--muted);
-  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #2d3748;
+  font-size: 0.875rem;
+  letter-spacing: 0.01em;
+  text-transform: none;
 }
 
 .form-group input {
-  padding: 0.9rem 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.95rem;
   transition: var(--transition);
   font-family: inherit;
+  background: #fff;
+  color: #1a2233;
+  line-height: 1.5;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-group input:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(47, 139, 58, 0.1);
-  background-color: #f0f9f5;
+  background-color: #f7fdf8;
 }
 
 .form-group input::placeholder {
-  color: #bbb;
+  color: #9ca3af;
+  font-weight: 400;
 }
 
 .divider {

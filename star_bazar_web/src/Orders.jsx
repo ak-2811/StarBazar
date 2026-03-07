@@ -74,6 +74,7 @@ import axios from 'axios'
 // ]
 export default function Orders() {
   const [orders, setOrders] = useState([])
+  const [expandedOrders, setExpandedOrders] = useState({})
 
   useEffect(() => {
 
@@ -90,6 +91,13 @@ export default function Orders() {
     .catch(err => console.log(err))
 
   }, [])
+
+  const toggleOrder = (orderId) => {
+    setExpandedOrders(prev => ({
+      ...prev,
+      [orderId]: !prev[orderId]
+    }))
+  }
   // 'Delivered', 'Processing', 'Shipped'
   const STATUS_TABS = ['All']
 
@@ -278,68 +286,96 @@ export default function Orders() {
               <p>No orders found.</p>
             </div>
           ) : (
-            filtered.map(order => (
-              <div key={order.id} className="order-card">
+            filtered.map(order => {
+              const isExpanded = !!expandedOrders[order.id]
+              return (
+                <div key={order.id} className={`order-card ${isExpanded ? 'expanded' : ''}`}>
 
-                {/* Card header */}
-                <div className="order-card-header">
-                  <div className="order-meta">
-                    <div className="order-meta-group">
-                      <span className="order-meta-label">ORDER ID</span>
-                      <span className="order-meta-value">#{order.id}</span>
-                    </div>
-                    <div className="order-meta-group">
-                      <span className="order-meta-label">DATE PLACED</span>
-                      <span className="order-meta-value">{order.date}</span>
-                    </div>
-                    <div className="order-meta-group">
-                      <span className="order-meta-label">TOTAL</span>
-                      <span className="order-meta-value">${order.total.toFixed(2)}</span>
-                    </div>
-                    <div className="order-meta-group">
-                      <span className="order-meta-label">STATUS</span>
-                      <span className={`order-status-badge status-${order.status.toLowerCase()}`}>
-                        <span className="status-dot" />
-                        {order.status}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="order-card-actions">
-                    <button
-                      className={`order-btn-solid ${order.status === 'PROCESSING' ? 'disabled' : ''}`}
-                      disabled={order.status === 'PROCESSING'}
-                      onClick={async () => {
-                        await handleReorder(order)
-                        navigate('/checkout')
-                      }}>
-                      Reorder
-                    </button>
-                  </div>
-                </div>
-
-                {/* Card body — one row per item */}
-                <div className="order-items-list">
-                  {order.items.map((item, idx) => (
-                    <div key={idx} className="order-item-row">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="order-item-img"
-                      />
-                      <div className="order-item-info">
-                        <div className="order-item-name">{item.name}</div>
-                        <div className="order-item-details">{item.details}</div>
+                  {/* Card header — clickable to toggle */}
+                  <div
+                    className="order-card-header"
+                    onClick={() => toggleOrder(order.id)}
+                    role="button"
+                    aria-expanded={isExpanded}
+                  >
+                    <div className="order-meta">
+                      <div className="order-meta-group">
+                        <span className="order-meta-label">ORDER ID</span>
+                        <span className="order-meta-value order-id-value">#{order.id}</span>
                       </div>
-                      <div className="order-item-price-block">
-                        <span className="order-item-price">${item.price.toFixed(2)}</span>
-                        <span className="order-item-qty">Qty: {item.qty}</span>
+                      <div className="order-meta-group">
+                        <span className="order-meta-label">DATE PLACED</span>
+                        <span className="order-meta-value">{order.date}</span>
+                      </div>
+                      <div className="order-meta-group">
+                        <span className="order-meta-label">TOTAL</span>
+                        <span className="order-meta-value">${order.total.toFixed(2)}</span>
+                      </div>
+                      <div className="order-meta-group">
+                        <span className="order-meta-label">STATUS</span>
+                        <span className={`order-status-badge status-${order.status.toLowerCase()}`}>
+                          <span className="status-dot" />
+                          {order.status}
+                        </span>
+                      </div>
+                      <div className="order-meta-group">
+                        <span className="order-meta-label">ITEMS</span>
+                        <span className="order-items-pill">
+                          {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
+                        </span>
                       </div>
                     </div>
-                  ))}
-                </div>
 
-              </div>
-            ))
+                    <div className="order-card-actions">
+                      <button
+                        className={`order-btn-solid ${order.status === 'PROCESSING' ? 'disabled' : ''}`}
+                        disabled={order.status === 'PROCESSING'}
+                        onClick={async (e) => {
+                          e.stopPropagation()
+                          await handleReorder(order)
+                          navigate('/checkout')
+                        }}>
+                        Reorder
+                      </button>
+                      <button
+                        className="order-expand-btn"
+                        aria-label={isExpanded ? 'Collapse order' : 'Expand order'}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleOrder(order.id)
+                        }}
+                      >
+                        <span className={`expand-chevron ${isExpanded ? 'rotated' : ''}`}>▼</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Card body — collapsible items */}
+                  <div className={`order-items-collapse ${isExpanded ? 'open' : ''}`}>
+                    <div className="order-items-list">
+                      {order.items.map((item, idx) => (
+                        <div key={idx} className="order-item-row">
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="order-item-img"
+                          />
+                          <div className="order-item-info">
+                            <div className="order-item-name">{item.name}</div>
+                            <div className="order-item-details">{item.details}</div>
+                          </div>
+                          <div className="order-item-price-block">
+                            <span className="order-item-price">${item.price.toFixed(2)}</span>
+                            <span className="order-item-qty">Qty: {item.qty}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              )
+            })
           )}
         </main>
       </div>
