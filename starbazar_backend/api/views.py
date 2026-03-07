@@ -88,13 +88,13 @@ def user_profile(request):
 
 
 
-FRAPPE_URL = "http://172.28.180.147:8001"
-API_KEY = "823008797018d0a"
-API_SECRET = "c3977b78a0e37d6"
+FRAPPE_URL = "http://192.168.29.39:8000"
+API_KEY = "ba0e494a95160ad"
+API_SECRET = "110c6b39227a18d"
 
 HEADERS = {
     "Authorization": f"token {API_KEY}:{API_SECRET}",
-    "Host": "groceryv15.localhost"
+    "Host": "http://192.168.29.39:8000"
 }
 
 
@@ -144,7 +144,7 @@ def create_sales_invoice(request):
                 "item_code": item_code,
                 "qty": qty - 1,
                 "rate": base_rate,
-                "warehouse": "Stores - A"
+                "warehouse": "Stores - SB"
             })
 
             # last item adjusted
@@ -152,14 +152,14 @@ def create_sales_invoice(request):
                 "item_code": item_code,
                 "qty": 1,
                 "rate": round(base_rate - diff, 2),
-                "warehouse": "Stores - A"
+                "warehouse": "Stores - SB"
             })
         else:
             invoice_items.append({
                 "item_code": item_code,
                 "qty": qty,
                 "rate": base_rate,
-                "warehouse": "Stores - A"
+                "warehouse": "Stores - SB"
             })
 
         total_amount += amount
@@ -173,7 +173,7 @@ def create_sales_invoice(request):
     payload = {
         "doctype": "Sales Invoice",
         "customer": customer_name,
-        "company": "Akshat",
+        "company": "Star Bazar",
 
         "currency": "USD",
         "selling_price_list": "Standard Selling",
@@ -196,14 +196,19 @@ def create_sales_invoice(request):
     }
 
     url = f"{FRAPPE_URL}/api/resource/Sales Invoice"
+    print("PAYLOAD SENT:", payload)
+    print("URL:", url)
 
     response = requests.post(
         url,
         headers=HEADERS,
         json=payload
     )
+    print("ERP STATUS:", response.status_code)
+    print("ERP RESPONSE:", response.text)
 
     data = response.json()
+    print("ERP DATA:", data)
 
     if "data" not in data:
         return Response(data, status=400)
@@ -280,6 +285,7 @@ def user_orders(request):
         data.append({
             "id": order.order_id,
             "date": order.created_at.strftime("%b %d, %Y"),
+            "time": order.created_at.strftime("%I:%M %p"),
             "status": order.status,
             "total": float(order.total),
             "items": items
@@ -335,7 +341,7 @@ def get_products_by_codes(request):
     bin_url = (
         f"{FRAPPE_URL}/api/resource/Bin?"
         f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - A"]]'
+        f'["warehouse","=","Stores - SB"]]'
         f'&fields=["item_code","actual_qty"]'
     )
 
@@ -479,7 +485,7 @@ def all_products(request):
     bin_url = (
         f"{FRAPPE_URL}/api/resource/Bin?"
         f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - A"]]'
+        f'["warehouse","=","Stores - SB"]]'
         f'&fields=["item_code","actual_qty"]'
     )
 
@@ -665,7 +671,7 @@ def wishlist_products(request):
     bin_url = (
         f"{FRAPPE_URL}/api/resource/Bin?"
         f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - A"]]'
+        f'["warehouse","=","Stores - SB"]]'
         f'&fields=["item_code","actual_qty"]'
     )
 
@@ -844,7 +850,7 @@ def best_sellers(request):
     bin_url = (
         f"{FRAPPE_URL}/api/resource/Bin?"
         f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - A"]]'
+        f'["warehouse","=","Stores - SB"]]'
         f'&fields=["item_code","actual_qty"]'
     )
 
@@ -1000,7 +1006,7 @@ def shop_all_product(request):
     bin_url = (
         f"{FRAPPE_URL}/api/resource/Bin?"
         f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - A"]]'
+        f'["warehouse","=","Stores - SB"]]'
         f'&fields=["item_code","actual_qty"]'
     )
 
@@ -1134,7 +1140,7 @@ def pricing_offers(request):
     bin_url = (
         f"{FRAPPE_URL}/api/resource/Bin?"
         f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - A"]]'
+        f'["warehouse","=","Stores - SB"]]'
         f'&fields=["item_code","actual_qty"]'
     )
 

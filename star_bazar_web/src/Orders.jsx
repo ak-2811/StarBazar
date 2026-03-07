@@ -312,11 +312,8 @@ export default function Orders() {
                         <span className="order-meta-value">${order.total.toFixed(2)}</span>
                       </div>
                       <div className="order-meta-group">
-                        <span className="order-meta-label">STATUS</span>
-                        <span className={`order-status-badge status-${order.status.toLowerCase()}`}>
-                          <span className="status-dot" />
-                          {order.status}
-                        </span>
+                        <span className="order-meta-label">TIME</span>
+                        <span className="order-meta-value">{order.time}</span>
                       </div>
                       <div className="order-meta-group">
                         <span className="order-meta-label">ITEMS</span>
@@ -328,8 +325,7 @@ export default function Orders() {
 
                     <div className="order-card-actions">
                       <button
-                        className={`order-btn-solid ${order.status === 'PROCESSING' ? 'disabled' : ''}`}
-                        disabled={order.status === 'PROCESSING'}
+                        className="order-btn-solid"
                         onClick={async (e) => {
                           e.stopPropagation()
                           await handleReorder(order)
