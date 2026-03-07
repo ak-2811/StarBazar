@@ -314,7 +314,7 @@ function toggleLike(code) {
                       <div className="product-img-front">
                         <div className="product-img">
                           {p.image ? (
-                            <img src={`http://192.168.29.141:8000/${p.image}`} alt={p.item_code} />
+                            <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} />
                           ) : (
                             p.emoji
                           )}
@@ -356,7 +356,7 @@ function toggleLike(code) {
                           <div className="qty-display-full">
                             <span className="qty-value-full">{cart[p.item_code].qty}</span>
                           </div>
-                          <button className="qty-btn-full plus" onClick={() => increaseQty(p)}>+</button>
+                          <button className="qty-btn-full plus" onClick={() => increaseQty(p)} disabled={(cart[p.item_code]?.qty || 0) >= p.stock}>+</button>
                         </div>
                       )}
                     </div>
@@ -380,7 +380,7 @@ function toggleLike(code) {
                 <div className="nutrition-modal-body">
                   <div className="modal-image-container">
                     <img
-                      src={`http://192.168.29.141:8000/${
+                      src={`http://groceryv15.localhost:8001/${
                         showBack && selectedNutrition.back_image
                           ? selectedNutrition.back_image
                           : selectedNutrition.image

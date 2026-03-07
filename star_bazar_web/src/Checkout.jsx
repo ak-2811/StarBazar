@@ -1,14 +1,39 @@
 import { useState, useEffect } from 'react'
 import React from 'react'
 import './Checkout.css'
-import { useLocation } from "react-router-dom";
+// import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import axios from 'axios'
 
 function Checkout({ onNavigate, onClearCart }) {
 
-  const location = useLocation();
+  // const location = useLocation();
   const navigate= useNavigate();
+
+const [productsFromServer, setProductsFromServer] = useState([]);
+useEffect(() => {
+
+  const cart = JSON.parse(localStorage.getItem("cart")) || {};
+  const itemCodes = Object.keys(cart);
+
+  if (itemCodes.length === 0) return;
+
+  axios.post(
+    "http://localhost:8000/api/products-by-codes/",
+    { item_codes: itemCodes }
+  )
+  .then(res => {
+    setProductsFromServer(res.data.products);
+  })
+  .catch(err => console.log(err));
+
+}, []);
+
+const productMap = {};
+productsFromServer.forEach(p => {
+  productMap[p.item_code] = p;
+});
+
 
 // Get cart object from localStorage and keep it in state so UI updates when qty changes
 const [cartObject, setCartObject] = useState(() => JSON.parse(localStorage.getItem("cart")) || {});
@@ -26,10 +51,33 @@ useEffect(() => {
   window.addEventListener('storage', handler)
   return () => window.removeEventListener('storage', handler)
 }, [])
-const offers = location.state?.offers || [];
+
+const [offers, setOffers] = useState([]);
+useEffect(() => {
+
+  axios.get("http://localhost:8000/api/pricing-offers/")
+  .then(res => {
+    setOffers(res.data)
+  })
+  .catch(err => console.log(err))
+
+}, [])
+// const offers = location.state?.offers || [];
 
 // Convert object → array (REAL cart)
-const cart = Object.values(cartObject);
+// const cart = Object.values(cartObject);
+const cart = Object.values(cartObject).map(cartItem => {
+
+  const latestProduct = productMap[cartItem.item.item_code];
+
+  if (!latestProduct) return cartItem;
+
+  return {
+    ...cartItem,
+    item: latestProduct
+  };
+
+});
 
 
 // 🔥 Apply offer logic
@@ -233,10 +281,11 @@ useEffect(() => {
       const items = updatedCart.map(item => ({
         item_code: item.item.item_code,
         qty: item.qty,
+        name: item.item.item_name,
         // rate: item.subtotal / item.qty
         original_price:item.item.price,
-        amount: item.subtotal
-
+        amount: item.subtotal,
+        image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `http://groceryv15.localhost:8001${item.item.image}`) : null,
       }));
       const order_id = crypto.randomUUID();
 
@@ -290,7 +339,7 @@ useEffect(() => {
       <div className="site-root">
         <header className="checkout-header">
           <div className="header-inner">
-            <div className="brand" onClick={() => onNavigate('home')}>
+            <div className="brand" onClick={() => onNavigate('/')}>
               <div className="logo-mark">🌿</div>
               <div className="brand-name">StarBazar</div>
             </div>

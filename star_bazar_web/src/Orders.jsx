@@ -1,82 +1,100 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Orders.css'
 import './Home.css'
+import axios from 'axios'
 
-const STATIC_ORDERS = [
-  {
-    id: 'SB-98321',
-    date: 'Oct 24, 2023',
-    status: 'DELIVERED',
-    total: 245.99,
-    items: [
-      {
-        name: 'Nike Air Max Velocity',
-        details: 'Size: 10.5 | Color: Crimson Red',
-        price: 129.99,
-        qty: 1,
-        image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=120&h=120&fit=crop',
-      },
-      {
-        name: 'Minimalist Quartz Watch',
-        details: 'Silver Mesh Band | 40mm',
-        price: 85.00,
-        qty: 1,
-        image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120&h=120&fit=crop',
-      },
-      {
-        name: 'Professional Studio Headphones',
-        details: 'Color: Matte Black',
-        price: 31.00,
-        qty: 1,
-        image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=120&h=120&fit=crop',
-      },
-    ],
-  },
-  {
-    id: 'SB-97442',
-    date: 'Oct 28, 2023',
-    status: 'SHIPPED',
-    total: 59.00,
-    items: [
-      {
-        name: 'Ergonomic Mouse Pad XL',
-        details: 'Color: Slate Grey | Non-slip base',
-        price: 59.00,
-        qty: 1,
-        image: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=120&h=120&fit=crop',
-      },
-    ],
-  },
-  {
-    id: 'SB-96105',
-    date: 'Sep 15, 2023',
-    status: 'PROCESSING',
-    total: 134.50,
-    items: [
-      {
-        name: 'Urban Daypack Backpack',
-        details: 'Color: Olive Green | 30L',
-        price: 89.50,
-        qty: 1,
-        image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=120&h=120&fit=crop',
-      },
-      {
-        name: 'Insulated Water Bottle',
-        details: 'Size: 750ml | Color: Midnight Blue',
-        price: 45.00,
-        qty: 1,
-        image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=120&h=120&fit=crop',
-      },
-    ],
-  },
-]
-// 'Delivered', 'Processing', 'Shipped'
-const STATUS_TABS = ['All']
-
-const DATE_OPTIONS = ['Last 3 months', 'Last 6 months', 'This year', 'All time']
-
+// const STATIC_ORDERS = [
+//   {
+//     id: 'SB-98321',
+//     date: 'Oct 24, 2023',
+//     status: 'DELIVERED',
+//     total: 245.99,
+//     items: [
+//       {
+//         name: 'Nike Air Max Velocity',
+//         details: 'Size: 10.5 | Color: Crimson Red',
+//         price: 129.99,
+//         qty: 1,
+//         image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=120&h=120&fit=crop',
+//       },
+//       {
+//         name: 'Minimalist Quartz Watch',
+//         details: 'Silver Mesh Band | 40mm',
+//         price: 85.00,
+//         qty: 1,
+//         image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120&h=120&fit=crop',
+//       },
+//       {
+//         name: 'Professional Studio Headphones',
+//         details: 'Color: Matte Black',
+//         price: 31.00,
+//         qty: 1,
+//         image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=120&h=120&fit=crop',
+//       },
+//     ],
+//   },
+//   {
+//     id: 'SB-97442',
+//     date: 'Oct 28, 2023',
+//     status: 'SHIPPED',
+//     total: 59.00,
+//     items: [
+//       {
+//         name: 'Ergonomic Mouse Pad XL',
+//         details: 'Color: Slate Grey | Non-slip base',
+//         price: 59.00,
+//         qty: 1,
+//         image: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=120&h=120&fit=crop',
+//       },
+//     ],
+//   },
+//   {
+//     id: 'SB-96105',
+//     date: 'Sep 15, 2023',
+//     status: 'PROCESSING',
+//     total: 134.50,
+//     items: [
+//       {
+//         name: 'Urban Daypack Backpack',
+//         details: 'Color: Olive Green | 30L',
+//         price: 89.50,
+//         qty: 1,
+//         image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=120&h=120&fit=crop',
+//       },
+//       {
+//         name: 'Insulated Water Bottle',
+//         details: 'Size: 750ml | Color: Midnight Blue',
+//         price: 45.00,
+//         qty: 1,
+//         image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=120&h=120&fit=crop',
+//       },
+//     ],
+//   },
+// ]
 export default function Orders() {
+  const [orders, setOrders] = useState([])
+
+  useEffect(() => {
+
+    const token = localStorage.getItem("token")
+
+    axios.get("http://localhost:8000/api/orders/", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    .then(res => {
+      setOrders(res.data)
+    })
+    .catch(err => console.log(err))
+
+  }, [])
+  // 'Delivered', 'Processing', 'Shipped'
+  const STATUS_TABS = ['All']
+
+  const DATE_OPTIONS = ['Last 3 months', 'Last 6 months', 'This year', 'All time']
+
   const navigate = useNavigate()
   const [activeTab, setActiveTab]       = useState('All')
   const [search, setSearch]             = useState('')
@@ -91,7 +109,49 @@ export default function Orders() {
     navigate('/login')
   }
 
-  const filtered = STATIC_ORDERS.filter(order => {
+  async function handleReorder(order) {
+    try {
+
+      const itemCodes = order.items.map(i => i.item_code)
+
+      const res = await axios.post(
+        "http://localhost:8000/api/products-by-codes/",
+        { item_codes: itemCodes }
+      )
+
+      const products = res.data.products
+      const cart = JSON.parse(localStorage.getItem("cart")) || {}
+
+      products.forEach(product => {
+
+        const orderItem = order.items.find(
+          i => i.item_code === product.item_code
+        )
+        if (!orderItem) return
+
+        const qty = orderItem.qty
+        const key = product.item_code
+
+        if (cart[key]) {
+          cart[key].qty += qty
+        } else {
+          cart[key] = {
+            item: product,
+            qty: qty
+          }
+        }
+
+      })
+
+      localStorage.setItem("cart", JSON.stringify(cart))
+      window.dispatchEvent(new Event("storage"))
+
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
+  const filtered = orders.filter(order => {
     const matchTab =
       activeTab === 'All' ||
       order.status === activeTab.toUpperCase()
@@ -248,7 +308,10 @@ export default function Orders() {
                     <button
                       className={`order-btn-solid ${order.status === 'PROCESSING' ? 'disabled' : ''}`}
                       disabled={order.status === 'PROCESSING'}
-                    >
+                      onClick={async () => {
+                        await handleReorder(order)
+                        navigate('/checkout')
+                      }}>
                       Reorder
                     </button>
                   </div>

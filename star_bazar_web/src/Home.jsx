@@ -284,7 +284,7 @@ async function toggleLike(item_code) {
 
 function increaseQty(p) {
   const key = p.item_code
-  console.log("Current Product Code:", p.item_code)
+  // console.log("Current Product Code:", p.item_code)
   setCart(prev => ({
     ...prev,
     [key]: {
@@ -417,7 +417,7 @@ const handleLogout = () => {
                   <div className="product-img-front">
                     <div className="product-img">
                       {p.image ? (
-                        <img src={`http://192.168.29.141:8000/${p.image}`} alt={p.item_code} />
+                        <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} />
                       ) : (
                         p.emoji
                       )}
@@ -445,7 +445,7 @@ const handleLogout = () => {
                   <div className="product-price-full">
                     ${p.price.toFixed(2)} <span className="unit">/ {p.unit}</span>
                   </div>
-                  {p.stock === 0 ? (
+                  {!p.in_stock ? (
                     <button className="add-btn-full disabled-btn" disabled>
                       Out of Stock
                     </button>
@@ -459,7 +459,7 @@ const handleLogout = () => {
                       <div className="qty-display-full">
                         <span className="qty-value-full">{cart[p.item_code].qty}</span>
                       </div>
-                      <button className="qty-btn-full plus" onClick={() => increaseQty(p)}>+</button>
+                      <button className="qty-btn-full plus" onClick={() => increaseQty(p)} disabled={(cart[p.item_code]?.qty || 0) >= p.stock}>+</button>
                     </div>
                   )}
                 </div>
@@ -481,7 +481,7 @@ const handleLogout = () => {
                 <div className="nutrition-modal-body">
                   <div className="modal-image-container">
                     <img
-                      src={`http://192.168.29.141:8000${
+                      src={`http://groceryv15.localhost:8001${
                         showBack && selectedNutrition.back_image
                           ? selectedNutrition.back_image
                           : selectedNutrition.image
@@ -553,13 +553,14 @@ const handleLogout = () => {
                   {liked[p.item_code] ? '❤' : '🤍'}
                 </button> */}
                 <div className="offer-badge">Special Deal</div>
-                <div className="offer-img">{p.image ? <img src={`http://192.168.29.141:8000/${p.image}`} alt={p.item_code} /> : p.emoji}</div>
+                <div className="offer-img">{p.image ? <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} /> : p.emoji}</div>
                 <div className="offer-body">
                   <div className="offer-name">{p.item_name}</div>
                   <div className="price-section">
                     <div className="original-price">${p.original_price.toFixed(2)}</div>
                   </div>
                   <div className="offer-text">{p.title}</div>
+                  
                   {cart[p.item_code] ? (
                     <div className="qty-selector">
                       <button className="qty-btn minus" onClick={() => decreaseQty(p)}>−</button>
@@ -569,9 +570,13 @@ const handleLogout = () => {
                         </span>
                       </div>
 
-                      <button className="qty-btn plus" onClick={() => increaseQty(p)}>+</button>
+                      <button className="qty-btn plus" onClick={() => increaseQty(p)}disabled={(cart[p.item_code]?.qty || 0) >= p.stock}>+</button>
                     </div>
-                  ) : (
+                  ) :!p.in_stock ? (
+                    <button className="add-btn-full disabled-btn" disabled>
+                      Out of Stock
+                    </button>
+                  ): (
                     <button className="add-btn" onClick={() => increaseQty(p)}> Add to Cart </button>
                   )}
                 </div>
@@ -589,7 +594,7 @@ const handleLogout = () => {
                   <div className="product-img-front">
                     <div className="product-img">
                       {p.image ? (
-                        <img src={`http://192.168.29.141:8000/${p.image}`} alt={p.item_code} />
+                        <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} />
                       ) : (
                         p.emoji
                       )}
@@ -617,7 +622,7 @@ const handleLogout = () => {
                   <div className="product-price-full">
                     ${p.price.toFixed(2)} <span className="unit">/ {p.unit}</span>
                   </div>
-                  {p.stock === 0 ? (
+                  {!p.in_stock ? (
                     <button className="add-btn-full disabled-btn" disabled>
                       Out of Stock
                     </button>
@@ -631,7 +636,7 @@ const handleLogout = () => {
                       <div className="qty-display-full">
                         <span className="qty-value-full">{cart[p.item_code].qty}</span>
                       </div>
-                      <button className="qty-btn-full plus" onClick={() => increaseQty(p)}>+</button>
+                      <button className="qty-btn-full plus" onClick={() => increaseQty(p)}disabled={(cart[p.item_code]?.qty || 0) >= p.stock}>+</button>
                     </div>
                   )}
                 </div>
