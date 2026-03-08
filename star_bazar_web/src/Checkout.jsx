@@ -66,18 +66,64 @@ useEffect(() => {
 
 // Convert object → array (REAL cart)
 // const cart = Object.values(cartObject);
-const cart = Object.values(cartObject).map(cartItem => {
+// const cart = Object.values(cartObject).map(cartItem => {
 
-  const latestProduct = productMap[cartItem.item.item_code];
+//   const latestProduct = productMap[cartItem.item.item_code];
 
-  if (!latestProduct) return cartItem;
+//   if (!latestProduct) return cartItem;
 
-  return {
-    ...cartItem,
-    item: latestProduct
-  };
+//   return {
+//     ...cartItem,
+//     item: latestProduct
+//   };
 
-});
+// });
+
+const cart = Object.values(cartObject)
+  .map(cartItem => {
+
+    const latestProduct = productMap[cartItem.item.item_code];
+
+    if (!latestProduct) return null;
+
+    const availableStock = latestProduct.stock;
+
+    if (availableStock <= 0) {
+      console.log("Removing out-of-stock item:", latestProduct.item_name);
+      return null;
+    }
+
+    let adjustedQty = cartItem.qty;
+
+    if (adjustedQty > availableStock) {
+      console.log("Reducing qty due to stock:", latestProduct.item_name);
+      adjustedQty = availableStock;
+    }
+
+    return {
+      ...cartItem,
+      qty: adjustedQty,
+      item: latestProduct
+    };
+
+  })
+  .filter(Boolean);
+
+  // updating the cart in local
+useEffect(() => {
+
+  const newCart = {};
+
+  cart.forEach(item => {
+    newCart[item.item.item_code] = {
+      item: item.item,
+      qty: item.qty
+    };
+  });
+
+  localStorage.setItem("cart", JSON.stringify(newCart));
+
+}, [cart,productsFromServer]);
 
 
 // 🔥 Apply offer logic
@@ -140,7 +186,7 @@ const cartItems = updatedCart.map(item => ({
   subtotal: item.subtotal,
   original_price: item.item.price,
   is_discounted: item.is_discounted,
-  image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `http://192.168.29.39:8000${item.item.image}`) : null,
+  image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `http://groceryv15.localhost:8001${item.item.image}`) : null,
   item_code: item.item.item_code
 }));
 // Totals
@@ -302,7 +348,7 @@ useEffect(() => {
         // rate: item.subtotal / item.qty
         original_price:item.item.price,
         amount: item.subtotal,
-        image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `http://192.168.29.39:8000${item.item.image}`) : null,
+        image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `http://groceryv15.localhost:8001${item.item.image}`) : null,
       }));
       const order_id = crypto.randomUUID();
 
