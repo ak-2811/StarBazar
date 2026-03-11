@@ -220,6 +220,12 @@ const tax = updatedCart.reduce((sum, item) => {
 }, 0);
 const total = subtotal + tax;
 
+  // Helper to format currency consistently
+  const formatCurrency = (value) => {
+    if (value == null || Number.isNaN(Number(value))) return '$0.00';
+    return Number(value).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  };
+
 // Logic to remove the item
 const handleRemoveItem = (itemCode) => {
   setCartObject(prev => {
@@ -359,6 +365,7 @@ useEffect(() => {
         tax:tax,
         order_id:order_id
       };
+      console.log(payload)
 
       const res = await axios.post(
         "http://localhost:8000/api/create-sales-invoice/",
@@ -397,6 +404,45 @@ useEffect(() => {
     if (onNavigate) onNavigate('home');
   };
 
+  // Additional confirmation helpers
+  const [copiedOrder, setCopiedOrder] = useState(false);
+
+  const handleViewOrder = () => {
+    if (onNavigate) onNavigate('orders');
+    else navigate('/orders');
+  };
+
+  const handlePrint = () => {
+    try {
+      const node = document.getElementById('order-print');
+      if (!node) return window.print();
+      const printContents = node.innerHTML;
+      const w = window.open('', '_blank', 'width=700,height=900');
+      if (!w) return alert('Unable to open print window.');
+      w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Order ${orderNumber}</title>`);
+      // Inline minimal styles for print window
+      w.document.write(`<style>body{font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#111; padding:24px} .accent{color:#2f8b3a} .summary{margin-top:12px}</style>`);
+      w.document.write(`</head><body>${printContents}</body></html>`);
+      w.document.close();
+      w.focus();
+      // Give the new window a small delay to render
+      setTimeout(() => { w.print(); w.close(); }, 400);
+    } catch (e) {
+      console.error(e);
+      window.print();
+    }
+  };
+
+  const handleCopyOrder = async () => {
+    try {
+      await navigator.clipboard.writeText(orderNumber || '');
+      setCopiedOrder(true);
+      setTimeout(() => setCopiedOrder(false), 2200);
+    } catch (e) {
+      console.error('Copy failed', e);
+    }
+  };
+
   if (orderPlaced) {
     return (
       <div className="site-root">
@@ -417,35 +463,43 @@ useEffect(() => {
         </section>
 
         <main className="checkout-container">
-          <div className="order-confirmation">
-            <div className="confirmation-icon">✓</div>
+          <div className="order-confirmation" id="order-print" role="status" aria-live="polite">
+            <div className="confirmation-icon" aria-hidden="true">✓</div>
             <h2>Thank You for Your Order!</h2>
-            <p className="order-number">Order Number: <strong>{orderNumber}</strong></p>
+            <p className="order-number">Order Number: <strong>{orderNumber}</strong>
+              <button
+                title="Copy order number"
+                className="btn-outline"
+                style={{marginLeft: '0.6rem'}}
+                onClick={handleCopyOrder}
+                aria-label="Copy order number"
+              >{copiedOrder ? 'Copied' : 'Copy'}</button>
+            </p>
             <p className="order-message">Your order has been successfully placed. You will receive a confirmation email shortly with tracking information.</p>
             
             <div className="order-summary-card">
               <h3>Order Summary</h3>
               <div className="summary-details">
                 <div className="summary-item">
-                  <span>Items:</span>
+                  <span>Items</span>
                   <strong>{cart.length}</strong>
                 </div>
                 <div className="summary-item">
-                  <span>Subtotal:</span>
-                  <strong>${subtotal.toFixed(2)}</strong>
+                  <span>Subtotal</span>
+                  <strong>{formatCurrency(subtotal)}</strong>
                 </div>
                 <div className="summary-item">
-                  <span>Shipping:</span>
-                  <strong>${shippingCost.toFixed(2)}</strong>
+                  <span>Shipping</span>
+                  <strong>{formatCurrency(shippingCost)}</strong>
                 </div>
                 <div className="summary-item">
-                  <span>Tax:</span>
-                  <strong>${tax.toFixed(2)}</strong>
+                  <span>Tax</span>
+                  <strong>{formatCurrency(tax)}</strong>
                 </div>
                 <div className="summary-divider"></div>
                 <div className="summary-item total">
-                  <span>Total:</span>
-                  <strong>${total.toFixed(2)}</strong>
+                  <span>Total</span>
+                  <strong>{formatCurrency(total)}</strong>
                 </div>
               </div>
             </div>
@@ -453,6 +507,14 @@ useEffect(() => {
             <div className="confirmation-actions">
               <button className="btn-primary" onClick={handleContinueShopping}>
                 Continue Shopping
+              </button>
+
+              <button className="btn-secondary" onClick={handleViewOrder}>
+                View Orders
+              </button>
+
+              <button className="btn-outline" onClick={handlePrint}>
+                Print Receipt
               </button>
             </div>
           </div>
@@ -780,7 +842,7 @@ useEffect(() => {
                 <div className="divider"></div>
 
                 <button type="submit" className="btn-submit">
-                  Place Order - ${total.toFixed(2)}
+                  Place Order — {formatCurrency(total)}
                 </button>
               </form>
             </section>
