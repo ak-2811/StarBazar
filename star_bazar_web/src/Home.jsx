@@ -65,6 +65,7 @@ function Home() {
   axios.get("http://localhost:8000/api/best-sellers/")
     .then(res => {
       setBestSellers(res.data)
+      console.log(res.data)
     })
     .catch(err => {
       console.error("Error fetching best sellers:", err)

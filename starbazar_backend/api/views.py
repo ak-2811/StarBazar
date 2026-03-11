@@ -87,14 +87,13 @@ def user_profile(request):
     })
 
 
-
-FRAPPE_URL = "http://192.168.29.39:8000"
-API_KEY = "ba0e494a95160ad"
-API_SECRET = "110c6b39227a18d"
+FRAPPE_URL = "http://172.28.180.147:8001"
+API_KEY = "823008797018d0a"
+API_SECRET = "c3977b78a0e37d6"
 
 HEADERS = {
     "Authorization": f"token {API_KEY}:{API_SECRET}",
-    "Host": "http://192.168.29.39:8000"
+    "Host": "groceryv15.localhost"
 }
 
 
@@ -117,7 +116,37 @@ def frappe_get_invoice_by_order(order_id):
 def create_sales_invoice(request):
 
     items = request.data.get("items", [])
-    customer_name = "Online Order"
+    # customer_name = "Online Order"
+    customer_name = request.data.get("customer_name", "Online Order")
+
+    # -----------------------------------
+    # CHECK / CREATE CUSTOMER IN FRAPPE
+    # -----------------------------------
+
+    customer_check_url = f"{FRAPPE_URL}/api/resource/Customer/{customer_name}"
+
+    check_response = requests.get(
+        customer_check_url,
+        headers=HEADERS
+    )
+
+    if check_response.status_code == 404:
+        # Customer does not exist → create it
+        customer_payload = {
+            "doctype": "Customer",
+            "customer_name": customer_name,
+            "customer_type": "Individual",
+            "customer_group": "All Customer Groups",
+            "territory": "All Territories"
+        }
+
+        create_customer_url = f"{FRAPPE_URL}/api/resource/Customer"
+
+        requests.post(
+            create_customer_url,
+            headers=HEADERS,
+            json=customer_payload
+        )
 
     if not items:
         return Response({"error": "No items provided"}, status=400)
@@ -144,7 +173,7 @@ def create_sales_invoice(request):
                 "item_code": item_code,
                 "qty": qty - 1,
                 "rate": base_rate,
-                "warehouse": "Stores - SB"
+                "warehouse": "Stores - A"
             })
 
             # last item adjusted
@@ -152,14 +181,14 @@ def create_sales_invoice(request):
                 "item_code": item_code,
                 "qty": 1,
                 "rate": round(base_rate - diff, 2),
-                "warehouse": "Stores - SB"
+                "warehouse": "Stores - A"
             })
         else:
             invoice_items.append({
                 "item_code": item_code,
                 "qty": qty,
                 "rate": base_rate,
-                "warehouse": "Stores - SB"
+                "warehouse": "Stores - A"
             })
 
         total_amount += amount
@@ -173,7 +202,7 @@ def create_sales_invoice(request):
     payload = {
         "doctype": "Sales Invoice",
         "customer": customer_name,
-        "company": "Star Bazar",
+        "company": "Akshat",
 
         "currency": "USD",
         "selling_price_list": "Standard Selling",
@@ -196,24 +225,54 @@ def create_sales_invoice(request):
     }
 
     url = f"{FRAPPE_URL}/api/resource/Sales Invoice"
-    print("PAYLOAD SENT:", payload)
-    print("URL:", url)
+    # print("PAYLOAD SENT:", payload)
+    # print("URL:", url)
 
     response = requests.post(
         url,
         headers=HEADERS,
         json=payload
     )
-    print("ERP STATUS:", response.status_code)
-    print("ERP RESPONSE:", response.text)
+    # print("ERP STATUS:", response.status_code)
+    # print("ERP RESPONSE:", response.text)
 
     data = response.json()
-    print("ERP DATA:", data)
+    # print("ERP DATA:", data)
 
     if "data" not in data:
         return Response(data, status=400)
     
     invoice_name = data["data"]["name"]
+
+    # Creating the entrt in the Online Order Doctype
+    online_order_payload = {
+        "doctype": "Online Order",
+        "order_id": order_id,
+        "customer_name": customer_name,
+        "sales_invoice": invoice_name,
+        "order_status": "Pending",
+        "order_total": total_amount,
+        "order_items": []
+    }
+
+    for i in items:
+        online_order_payload["order_items"].append({
+            "doctype": "Online Order Items",
+            "item_code": i["item_code"],
+            "item_name": i["name"],
+            "qty": i["qty"],
+            "price": i["original_price"]
+        })
+
+    online_order_url = f"{FRAPPE_URL}/api/resource/Online Order"
+
+    online_response=requests.post(
+        online_order_url,
+        headers=HEADERS,
+        json=online_order_payload
+    )
+    print("ONLINE ORDER STATUS:", online_response.status_code)
+    print("ONLINE ORDER RESPONSE:", online_response.text)
     
     # submit invoice
     submit_url = f"{FRAPPE_URL}/api/resource/Sales Invoice/{invoice_name}"
@@ -341,7 +400,7 @@ def get_products_by_codes(request):
     bin_url = (
         f"{FRAPPE_URL}/api/resource/Bin?"
         f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - SB"]]'
+        f'["warehouse","=","Stores - A"]]'
         f'&fields=["item_code","actual_qty"]'
     )
 
@@ -485,7 +544,7 @@ def all_products(request):
     bin_url = (
         f"{FRAPPE_URL}/api/resource/Bin?"
         f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - SB"]]'
+        f'["warehouse","=","Stores - A"]]'
         f'&fields=["item_code","actual_qty"]'
     )
 
@@ -671,7 +730,7 @@ def wishlist_products(request):
     bin_url = (
         f"{FRAPPE_URL}/api/resource/Bin?"
         f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - SB"]]'
+        f'["warehouse","=","Stores - A"]]'
         f'&fields=["item_code","actual_qty"]'
     )
 
@@ -772,6 +831,7 @@ def wishlist_products(request):
             "tobacco": item.get("custom_tobaco"),
             "price": price_map.get(code, 0),
             "stock": stock_qty,
+            "in_stock": stock_qty > 0,
             "availability": "in-stock" if stock_qty > 0 else "out-of-stock"
         })
 
@@ -850,7 +910,7 @@ def best_sellers(request):
     bin_url = (
         f"{FRAPPE_URL}/api/resource/Bin?"
         f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - SB"]]'
+        f'["warehouse","=","Stores - A"]]'
         f'&fields=["item_code","actual_qty"]'
     )
 
@@ -902,12 +962,17 @@ def best_sellers(request):
 
     # Merge item + price
     final_data = []
+    print("BIN MAP:", bin_map)
+    print("PENDING MAP:", pending_map)
+
     for item in items_data:
         item_code = item["name"]
         main_image = item.get("image")
 
         back_image = None
         stock_qty = stock_map.get(item["name"], 0)
+        print("BIN MAP:", bin_map)
+        print("PENDING MAP:", pending_map)
 
         # Find attachment that is NOT the main image
         for f in file_data:
@@ -1006,7 +1071,7 @@ def shop_all_product(request):
     bin_url = (
         f"{FRAPPE_URL}/api/resource/Bin?"
         f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - SB"]]'
+        f'["warehouse","=","Stores - A"]]'
         f'&fields=["item_code","actual_qty"]'
     )
 
@@ -1140,7 +1205,7 @@ def pricing_offers(request):
     bin_url = (
         f"{FRAPPE_URL}/api/resource/Bin?"
         f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - SB"]]'
+        f'["warehouse","=","Stores - A"]]'
         f'&fields=["item_code","actual_qty"]'
     )
 
