@@ -186,7 +186,7 @@ const cartItems = updatedCart.map(item => ({
   subtotal: item.subtotal,
   original_price: item.item.price,
   is_discounted: item.is_discounted,
-  image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `http://groceryv15.localhost:8001${item.item.image}`) : null,
+  image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `http://192.168.0.119:8000${item.item.image}`) : null,
   item_code: item.item.item_code
 }));
 // Totals
@@ -305,7 +305,8 @@ useEffect(() => {
 
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('credit-card');
+  // Default to store pickup and remove home delivery option
+  const [paymentMethod, setPaymentMethod] = useState('pickup-from-store');
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -354,7 +355,7 @@ useEffect(() => {
         // rate: item.subtotal / item.qty
         original_price:item.item.price,
         amount: item.subtotal,
-        image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `http://groceryv15.localhost:8001${item.item.image}`) : null,
+        image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `http://192.168.0.119:8000${item.item.image}`) : null,
       }));
       const order_id = crypto.randomUUID();
 
@@ -659,22 +660,7 @@ useEffect(() => {
                     <h3>🚚 Delivery Method</h3>
                   </div>
                   <div className="delivery-options">
-                    <label className="delivery-option">
-                      <input
-                        type="radio"
-                        name="deliveryMethod"
-                        value="credit-card"
-                        checked={paymentMethod === 'credit-card'}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                      />
-                      <span className="delivery-label">
-                        <span className="delivery-icon">🚚</span>
-                        <span className="delivery-text">
-                          <strong>Home Delivery</strong>
-                          <small>We deliver to your address ($5.99)</small>
-                        </span>
-                      </span>
-                    </label>
+                    {/* Only show Pickup from Store by default — Home Delivery removed */}
                     <label className="delivery-option">
                       <input
                         type="radio"
@@ -694,53 +680,7 @@ useEffect(() => {
                   </div>
                 </div>
 
-                {/* Delivery Address - Only for Home Delivery */}
-                {paymentMethod === 'credit-card' && (
-                  <div className="form-section">
-                    <div className="section-header">
-                      <h3>📍 Delivery Address</h3>
-                    </div>
-                    <div className="form-group full">
-                      <label htmlFor="address">Address *</label>
-                      <input
-                        type="text"
-                        id="address"
-                        name="address"
-                        value={formData.address}
-                        onChange={handleInputChange}
-                        placeholder="123 Main Street"
-                        required
-                      />
-                    </div>
-
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label htmlFor="city">City *</label>
-                        <input
-                          type="text"
-                          id="city"
-                          name="city"
-                          value={formData.city}
-                          onChange={handleInputChange}
-                          placeholder="New York"
-                          required
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label htmlFor="zipCode">ZIP Code *</label>
-                        <input
-                          type="text"
-                          id="zipCode"
-                          name="zipCode"
-                          value={formData.zipCode}
-                          onChange={handleInputChange}
-                          placeholder="10001"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {/* Home delivery and address inputs removed — store pickup only */}
 
                 {/* Pickup Info - Only for Store Pickup */}
                 {paymentMethod === 'pickup-from-store' && (

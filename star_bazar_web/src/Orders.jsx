@@ -348,24 +348,27 @@ export default function Orders() {
 
                   {/* Card body — collapsible items */}
                   <div className={`order-items-collapse ${isExpanded ? 'open' : ''}`}>
-                    <div className="order-items-list">
-                      {order.items.map((item, idx) => (
-                        <div key={idx} className="order-item-row">
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="order-item-img"
-                          />
-                          <div className="order-item-info">
-                            <div className="order-item-name">{item.name}</div>
-                            <div className="order-item-details">{item.details}</div>
+                    {/* Scrollable wrapper so long order item lists show a scrollbar */}
+                    <div className="order-items-scroll">
+                      <div className="order-items-list">
+                        {order.items.map((item, idx) => (
+                          <div key={idx} className="order-item-row">
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              className="order-item-img"
+                            />
+                            <div className="order-item-info">
+                              <div className="order-item-name">{item.name}</div>
+                              <div className="order-item-details">{item.details}</div>
+                            </div>
+                            <div className="order-item-price-block">
+                              <span className="order-item-price">${item.price.toFixed(2)}</span>
+                              <span className="order-item-qty">Qty: {item.qty}</span>
+                            </div>
                           </div>
-                          <div className="order-item-price-block">
-                            <span className="order-item-price">${item.price.toFixed(2)}</span>
-                            <span className="order-item-qty">Qty: {item.qty}</span>
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   </div>
 

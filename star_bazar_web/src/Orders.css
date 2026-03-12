@@ -480,6 +480,24 @@
   max-height: 2000px;
 }
 
+/* Scrollable wrapper for long order item lists */
+.order-items-scroll {
+  max-height: 420px; /* adjust as needed */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.order-items-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+.order-items-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.08);
+  border-radius: 8px;
+}
+.order-items-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 /* Card body — item rows */
 .order-items-list {
   display: flex;
