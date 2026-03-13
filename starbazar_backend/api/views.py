@@ -243,8 +243,17 @@ def create_sales_invoice(request):
         return Response(data, status=400)
     
     invoice_name = data["data"]["name"]
+       
+    # submit invoice
+    submit_url = f"{FRAPPE_URL}/api/resource/Sales Invoice/{invoice_name}"
 
-    # Creating the entrt in the Online Order Doctype
+    submit_response = requests.put(
+        submit_url,
+        headers=HEADERS,
+        json={"docstatus": 1}
+    )
+
+     # Creating the entrt in the Online Order Doctype
     online_order_payload = {
         "doctype": "Online Order",
         "order_id": order_id,
@@ -273,15 +282,7 @@ def create_sales_invoice(request):
     )
     print("ONLINE ORDER STATUS:", online_response.status_code)
     print("ONLINE ORDER RESPONSE:", online_response.text)
-    
-    # submit invoice
-    submit_url = f"{FRAPPE_URL}/api/resource/Sales Invoice/{invoice_name}"
 
-    submit_response = requests.put(
-        submit_url,
-        headers=HEADERS,
-        json={"docstatus": 1}
-    )
     # -----------------------------
     # SAVE ORDER IN DJANGO DATABASE
     # -----------------------------
@@ -326,6 +327,15 @@ def user_orders(request):
     user = request.user
 
     orders = Order.objects.filter(user=user).order_by("-created_at")
+    page = int(request.GET.get("page", 1))
+    page_size = int(request.GET.get("page_size", 5))
+    total_count = orders.count()
+
+    start = (page - 1) * page_size
+    end = start + page_size
+
+    orders = orders[start:end]
+
 
     data = []
 
@@ -350,7 +360,10 @@ def user_orders(request):
             "items": items
         })
 
-    return Response(data)
+    return Response({
+        "results": data,
+        "count": total_count
+    })
 
 
 # Recalculating at the time of checkout

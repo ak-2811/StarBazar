@@ -186,7 +186,7 @@ const cartItems = updatedCart.map(item => ({
   subtotal: item.subtotal,
   original_price: item.item.price,
   is_discounted: item.is_discounted,
-  image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `http://192.168.0.119:8000${item.item.image}`) : null,
+  image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `http://groceryv15.localhost:8001${item.item.image}`) : null,
   item_code: item.item.item_code
 }));
 // Totals
@@ -355,7 +355,7 @@ useEffect(() => {
         // rate: item.subtotal / item.qty
         original_price:item.item.price,
         amount: item.subtotal,
-        image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `http://192.168.0.119:8000${item.item.image}`) : null,
+        image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `http://groceryv15.localhost:8001${item.item.image}`) : null,
       }));
       const order_id = crypto.randomUUID();
 

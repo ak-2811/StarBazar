@@ -4,93 +4,29 @@ import './Orders.css'
 import './Home.css'
 import axios from 'axios'
 
-// const STATIC_ORDERS = [
-//   {
-//     id: 'SB-98321',
-//     date: 'Oct 24, 2023',
-//     status: 'DELIVERED',
-//     total: 245.99,
-//     items: [
-//       {
-//         name: 'Nike Air Max Velocity',
-//         details: 'Size: 10.5 | Color: Crimson Red',
-//         price: 129.99,
-//         qty: 1,
-//         image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=120&h=120&fit=crop',
-//       },
-//       {
-//         name: 'Minimalist Quartz Watch',
-//         details: 'Silver Mesh Band | 40mm',
-//         price: 85.00,
-//         qty: 1,
-//         image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120&h=120&fit=crop',
-//       },
-//       {
-//         name: 'Professional Studio Headphones',
-//         details: 'Color: Matte Black',
-//         price: 31.00,
-//         qty: 1,
-//         image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=120&h=120&fit=crop',
-//       },
-//     ],
-//   },
-//   {
-//     id: 'SB-97442',
-//     date: 'Oct 28, 2023',
-//     status: 'SHIPPED',
-//     total: 59.00,
-//     items: [
-//       {
-//         name: 'Ergonomic Mouse Pad XL',
-//         details: 'Color: Slate Grey | Non-slip base',
-//         price: 59.00,
-//         qty: 1,
-//         image: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=120&h=120&fit=crop',
-//       },
-//     ],
-//   },
-//   {
-//     id: 'SB-96105',
-//     date: 'Sep 15, 2023',
-//     status: 'PROCESSING',
-//     total: 134.50,
-//     items: [
-//       {
-//         name: 'Urban Daypack Backpack',
-//         details: 'Color: Olive Green | 30L',
-//         price: 89.50,
-//         qty: 1,
-//         image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=120&h=120&fit=crop',
-//       },
-//       {
-//         name: 'Insulated Water Bottle',
-//         details: 'Size: 750ml | Color: Midnight Blue',
-//         price: 45.00,
-//         qty: 1,
-//         image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=120&h=120&fit=crop',
-//       },
-//     ],
-//   },
-// ]
 export default function Orders() {
   const [orders, setOrders] = useState([])
   const [expandedOrders, setExpandedOrders] = useState({})
+  const [page, setPage] = useState(1)
+  const [pageSize] = useState(5)
+  const [totalCount, setTotalCount] = useState(0)
+
+  const totalPages = Math.ceil(totalCount / pageSize)
 
   useEffect(() => {
-
     const token = localStorage.getItem("token")
-
-    axios.get("http://localhost:8000/api/orders/", {
+    axios.get(`http://localhost:8000/api/orders/?page=${page}&page_size=${pageSize}`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
     })
     .then(res => {
-      setOrders(res.data)
+      setOrders(res.data.results || [])
+      setTotalCount(res.data.count || 0)
     })
     .catch(err => console.log(err))
 
-  }, [])
+  }, [page])
 
   const toggleOrder = (orderId) => {
     setExpandedOrders(prev => ({
@@ -375,6 +311,39 @@ export default function Orders() {
                 </div>
               )
             })
+          )}
+          {totalPages > 1 && (
+            <div className="pagination">
+
+              <button
+                className="pagination-btn"
+                onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                disabled={page === 1}
+              >
+                ← Previous
+              </button>
+
+              <div className="pagination-numbers">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                  <button
+                    key={p}
+                    className={`pagination-number ${page === p ? 'active' : ''}`}
+                    onClick={() => setPage(p)}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                className="pagination-btn"
+                onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={page === totalPages}
+              >
+                Next →
+              </button>
+
+            </div>
           )}
         </main>
       </div>
