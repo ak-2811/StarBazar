@@ -10,7 +10,110 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import permission_classes
 from django.contrib.auth.models import User
 from .models import Wishlist,Order,OrderItem
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
+CLOVER_MERCHANT_ID = "JT3NAZ6NGHFY1"
+CLOVER_PRIVATE_TOKEN = "857aada8-8be5-130c-41cd-26969665301f"
+
+@csrf_exempt
+def create_clover_checkout(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Only POST allowed"}, status=405)
+
+    try:
+        data = json.loads(request.body)
+
+        order_id = data["order_id"]
+        first_name = data.get("first_name", "")
+        last_name = data.get("last_name", "")
+        email = data.get("email", "")
+        items = data.get("items", [])
+        tax = float(data.get("tax", 0))
+        total = float(data.get("total", 0))
+
+        # 1. Save pending order in your DB here
+        # Example:
+        # order = Order.objects.create(
+        #     order_id=order_id,
+        #     customer_name=data.get("customer_name"),
+        #     email=email,
+        #     total=total,
+        #     tax=tax,
+        #     payment_status="PENDING"
+        # )
+
+        line_items = []
+        for item in items:
+            qty = int(item["qty"])
+            unit_price = round(float(item["amount"]) / qty, 2) if qty else 0
+            line_items.append({
+                "name": item["name"],
+                "price": int(round(unit_price * 100)),
+                "unitQty": qty
+            })
+
+        if tax > 0:
+            line_items.append({
+                "name": "Tax",
+                "price": int(round(tax * 100)),
+                "unitQty": 1
+            })
+
+        success_url = "https://example.com/success"
+        failure_url = "https://example.com/failure"
+
+        payload = {
+            "customer": {
+                "firstName": first_name,
+                "lastName": last_name,
+                "email": email
+            },
+            "redirectUrls": {
+                "success": success_url,
+                "failure": failure_url
+            },
+            "shoppingCart": {
+                "lineItems": line_items
+            }
+        }
+
+        headers = {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "X-Clover-Merchant-Id": CLOVER_MERCHANT_ID,
+            "authorization": f"Bearer {CLOVER_PRIVATE_TOKEN}"
+        }
+
+        response = requests.post(
+            "https://apisandbox.dev.clover.com/invoicingcheckoutservice/v1/checkouts",
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
+        print("CLOVER STATUS:", response.status_code)
+        print("CLOVER RESPONSE:", response.text)
+        if response.status_code not in [200, 201]:
+            return JsonResponse({
+                "error": "Clover checkout creation failed",
+                "details": response.text
+            }, status=400)
+
+        clover_data = response.json()
+
+        # 2. Save Clover session details on your order here
+        # order.clover_checkout_url = clover_data.get("href")
+        # order.clover_checkout_id = clover_data.get("id")
+        # order.save()
+
+        return JsonResponse({
+            "order_id": order_id,
+            "href": clover_data.get("href"),
+            "clover_response": clover_data
+        })
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

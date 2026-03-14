@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import best_sellers,shop_all_product,pricing_offers,all_products,wishlist_products
 from .views import signup_view,login_view,toggle_wishlist,get_user_wishlist,get_categories,user_profile
-from .views import create_sales_invoice,user_orders,get_products_by_codes
+from .views import create_sales_invoice,user_orders,get_products_by_codes,create_clover_checkout
 urlpatterns = [
     path('signup/', signup_view),
     path('login/', login_view),
@@ -17,4 +17,5 @@ urlpatterns = [
     path('create-sales-invoice/', create_sales_invoice),
     path('orders/',user_orders),
     path("products-by-codes/", get_products_by_codes),
+    path('create-clover-checkout/',create_clover_checkout)
 ]
