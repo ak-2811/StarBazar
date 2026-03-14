@@ -333,57 +333,134 @@ useEffect(() => {
     setFormData(prev => ({ ...prev, cardExpiry: raw }))
   }
 
+  // const handleSubmitOrder = async (e) => {
+  //   e.preventDefault();
+
+  //   if (!formData.firstName || !formData.lastName || !formData.email) {
+  //     alert('Please fill in all personal information fields');
+  //     return;
+  //   }
+
+  //   if (updatedCart.length === 0) {
+  //     alert('Your cart is empty');
+  //     return;
+  //   }
+
+  //   try {
+
+  //     const items = updatedCart.map(item => ({
+  //       item_code: item.item.item_code,
+  //       qty: item.qty,
+  //       name: item.item.item_name,
+  //       // rate: item.subtotal / item.qty
+  //       original_price:item.item.price,
+  //       amount: item.subtotal,
+  //       image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `http://groceryv15.localhost:8001${item.item.image}`) : null,
+  //     }));
+  //     const order_id = crypto.randomUUID();
+
+  //     const payload = {
+  //       customer_name: `${formData.firstName} ${formData.lastName}`,
+  //       email: formData.email,
+  //       items: items,
+  //       tax:tax,
+  //       order_id:order_id
+  //     };
+  //     console.log(payload)
+
+  //     const res = await axios.post(
+  //       "http://localhost:8000/api/create-sales-invoice/",
+  //       payload
+  //     );
+
+  //     console.log("Invoice created:", res.data);
+
+  //     const newOrderNumber = res.data.invoice;
+  //     setOrderNumber(newOrderNumber);
+  //     setOrderPlaced(true);
+
+  //     if (onClearCart) onClearCart();
+
+  //   } catch (error) {
+  //     console.error(error);
+  //     alert("Order failed");
+  //   }
+  // };
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const payment = params.get("payment");
+    const orderId = params.get("order_id");
+
+    if (!payment) return;
+
+    if (payment === "success") {
+      setOrderPlaced(true);
+      setOrderNumber(orderId || "");
+      localStorage.removeItem("cart");
+    }
+
+    if (payment === "failed") {
+      alert("Transaction failed. Please try again.");
+    }
+
+  }, []);
+
   const handleSubmitOrder = async (e) => {
     e.preventDefault();
 
     if (!formData.firstName || !formData.lastName || !formData.email) {
-      alert('Please fill in all personal information fields');
+      alert("Please fill in all personal information fields");
       return;
     }
 
     if (updatedCart.length === 0) {
-      alert('Your cart is empty');
+      alert("Your cart is empty");
       return;
     }
 
     try {
-
       const items = updatedCart.map(item => ({
         item_code: item.item.item_code,
         qty: item.qty,
         name: item.item.item_name,
-        // rate: item.subtotal / item.qty
-        original_price:item.item.price,
+        original_price: item.item.price,
         amount: item.subtotal,
-        image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `http://groceryv15.localhost:8001${item.item.image}`) : null,
+        image: item.item.image
+          ? (item.item.image.startsWith("http")
+              ? item.item.image
+              : `http://groceryv15.localhost:8001${item.item.image}`)
+          : null,
       }));
+
       const order_id = crypto.randomUUID();
 
       const payload = {
+        order_id,
         customer_name: `${formData.firstName} ${formData.lastName}`,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
         email: formData.email,
-        items: items,
-        tax:tax,
-        order_id:order_id
+        phone: formData.phone,
+        items,
+        tax,
+        subtotal,
+        total,
       };
-      console.log(payload)
 
       const res = await axios.post(
-        "http://localhost:8000/api/create-sales-invoice/",
+        "http://localhost:8000/api/create-clover-checkout/",
         payload
       );
 
-      console.log("Invoice created:", res.data);
+      if (res.data?.href) {
+        window.location.assign(res.data.href);
+        return;
+      }
 
-      const newOrderNumber = res.data.invoice;
-      setOrderNumber(newOrderNumber);
-      setOrderPlaced(true);
-
-      if (onClearCart) onClearCart();
-
+      alert("Unable to start payment");
     } catch (error) {
       console.error(error);
-      alert("Order failed");
+      alert("Payment initialization failed");
     }
   };
 
