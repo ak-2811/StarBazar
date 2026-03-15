@@ -277,10 +277,7 @@ function decreaseQty(product) {
     phone: '',
     address: '',
     city: '',
-    zipCode: '',
-    cardNumber: '',
-    cardExpiry: '',
-    cardCVV: ''
+    zipCode: ''
   });
 
   
@@ -316,22 +313,7 @@ useEffect(() => {
     }));
   };
 
-  const handleExpiryChange = (e) => {
-    let raw = e.target.value
-
-    // Strip everything except digits
-    raw = raw.replace(/\D/g, '')
-
-    // Cap at 4 digits (MMYY)
-    if (raw.length > 4) raw = raw.slice(0, 4)
-
-    // Auto-insert slash after 2 digits
-    if (raw.length >= 3) {
-      raw = raw.slice(0, 2) + '/' + raw.slice(2)
-    }
-
-    setFormData(prev => ({ ...prev, cardExpiry: raw }))
-  }
+  // payment inputs removed for pickup-only flow
 
   // const handleSubmitOrder = async (e) => {
   //   e.preventDefault();
@@ -473,10 +455,7 @@ useEffect(() => {
       phone: '',
       address: '',
       city: '',
-      zipCode: '',
-      cardNumber: '',
-      cardExpiry: '',
-      cardCVV: ''
+      zipCode: ''
     });
 
     if (onNavigate) onNavigate('home');
@@ -802,61 +781,7 @@ useEffect(() => {
                   </div>
                 )}
 
-                <div className="divider"></div>
-
-                {/* Payment Information */}
-                <div className="form-section">
-                  <div className="section-header">
-                    <h3>💳 Payment Information</h3>
-                  </div>
-                  <p className="payment-note">Pay securely with your credit or debit card</p>
-
-                  <div className="form-group full">
-                    <label htmlFor="cardNumber">Card Number *</label>
-                    <input
-                      type="text"
-                      id="cardNumber"
-                      name="cardNumber"
-                      value={formData.cardNumber}
-                      onChange={handleInputChange}
-                      placeholder="1234 5678 9012 3456"
-                      maxLength="19"
-                      required
-                    />
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="cardExpiry">Expiry Date *</label>
-                      <input
-                        type="text"
-                        id="cardExpiry"
-                        name="cardExpiry"
-                        value={formData.cardExpiry}
-                        onChange={handleExpiryChange}
-                        placeholder="MM/YY"
-                        maxLength="5"
-                        inputMode="numeric"
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label htmlFor="cardCVV">CVV *</label>
-                      <input
-                        type="text"
-                        id="cardCVV"
-                        name="cardCVV"
-                        value={formData.cardCVV}
-                        onChange={handleInputChange}
-                        placeholder="123"
-                        maxLength="3"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="divider"></div>
+                {/* Payment removed for pickup-only checkout — Place Order button remains below. */}
 
                 <button type="submit" className="btn-submit">
                   Place Order — {formatCurrency(total)}
