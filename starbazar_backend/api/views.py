@@ -651,9 +651,7 @@ def all_products(request):
     except:
         max_price = None
 
-    filters = []
-
-    filters.append(["item_group", "!=", "Scheme"])
+    filters = [["item_group", "!=", "Scheme"]]
 
     if category and category != "all":
         filters.append(["item_group", "=", category])
@@ -661,197 +659,138 @@ def all_products(request):
     if search:
         filters.append(["item_name", "like", f"%{search}%"])
 
-    # 🔥 1️⃣ Fetch RANDOM 24 items
+    # 1️⃣ Fetch only 40 items directly
     items_url = (
         f"{FRAPPE_URL}/api/resource/Item?"
         f'fields=["name","item_name","item_code","image","stock_uom","item_group","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
-        f"&limit_page_length=100"
+        f"&limit_page_length=40"
+        f"&limit_start={((page - 1) * page_size)}"
+        f"&filters={json.dumps(filters)}"
     )
-
-    if filters:
-        items_url += f"&filters={json.dumps(filters)}"
 
     items_response = requests.get(items_url, headers=HEADERS).json()
     items_data = items_response.get("data", [])
 
     if not items_data:
-        return Response({
-            "products": [],
-            "total_count": 0
-        })
+        return Response({"products": [], "total_count": 0})
 
-    # Extract item codes
     item_codes = [item["item_code"] for item in items_data]
     item_codes_json = json.dumps(item_codes)
 
-    # 🔥 2️⃣ Batch fetch prices
-    price_url = (
-        f"{FRAPPE_URL}/api/resource/Item%20Price?"
-        f'filters=[["item_code","in",{item_codes_json}],'
-        f'["price_list","=","Standard Selling"]]'
-        f'&fields=["item_code","price_list_rate","creation"]'
-        f'&order_by=creation desc'
-    )
+    # 2️⃣ Fetch prices, stock, files in parallel
+    import concurrent.futures
 
-    price_response = requests.get(price_url, headers=HEADERS).json()
-    price_data = price_response.get("data", [])
+    def fetch_prices():
+        price_url = (
+            f"{FRAPPE_URL}/api/resource/Item%20Price?"
+            f'filters=[["item_code","in",{item_codes_json}],'
+            f'["price_list","=","Standard Selling"]]'
+            f'&fields=["item_code","price_list_rate"]'
+            f'&order_by=creation desc'
+            f'&limit_page_length=500'
+        )
+        return requests.get(price_url, headers=HEADERS).json().get("data", [])
 
+    def fetch_stock():
+        bin_url = (
+            f"{FRAPPE_URL}/api/resource/Bin?"
+            f'filters=[["item_code","in",{item_codes_json}],'
+            f'["warehouse","=","Stores - SB"]]'
+            f'&fields=["item_code","actual_qty"]'
+        )
+        return requests.get(bin_url, headers=HEADERS).json().get("data", [])
+
+    def fetch_pending():
+        pending_url = f"{FRAPPE_URL}/api/method/star_bazar.star_bazar.api.stock.get_pending_pos_qty"
+        return requests.post(pending_url, headers=HEADERS, json={"item_codes": item_codes}).json().get("message", [])
+
+    def fetch_files():
+        file_url = (
+            f"{FRAPPE_URL}/api/resource/File?"
+            f'filters=[["File","attached_to_doctype","=","Item"],'
+            f'["File","attached_to_name","in",{item_codes_json}]]'
+            f'&fields=["attached_to_name","file_url"]'
+        )
+        return requests.get(file_url, headers=HEADERS).json().get("data", [])
+
+    # Run all fetches in parallel
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        price_future = executor.submit(fetch_prices)
+        stock_future = executor.submit(fetch_stock)
+        pending_future = executor.submit(fetch_pending)
+        file_future = executor.submit(fetch_files)
+
+        price_data = price_future.result()
+        bin_data = stock_future.result()
+        pending_rows = pending_future.result()
+        file_data = file_future.result()
+
+    # 3️⃣ Build maps
     price_map = {}
     for price in price_data:
         if price["item_code"] not in price_map:
             price_map[price["item_code"]] = price["price_list_rate"]
-    
-    # 🔥 Apply Sorting
-        if sort_by == "low_to_high":
-            items_data = sorted(
-                items_data,
-                key=lambda item: float(price_map.get(item["item_code"], 0) or 0)
-            )
-
-        elif sort_by == "high_to_low":
-            items_data = sorted(
-                items_data,
-                key=lambda item: float(price_map.get(item["item_code"], 0) or 0),
-                reverse=True
-            )
-
-    # 🔥 3️⃣ Batch fetch REAL stock (Bin - Pending POS)
-
-    # 1️⃣ Get base stock from Bin
-    bin_url = (
-        f"{FRAPPE_URL}/api/resource/Bin?"
-        f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - SB"]]'
-        f'&fields=["item_code","actual_qty"]'
-    )
-
-    bin_response = requests.get(bin_url, headers=HEADERS).json()
-    bin_data = bin_response.get("data", [])
 
     bin_map = {d["item_code"]: float(d["actual_qty"] or 0) for d in bin_data}
 
-    pending_url = f"{FRAPPE_URL}/api/method/star_bazar.star_bazar.api.stock.get_pending_pos_qty"
-    # print("ITEM CODES SENT:", item_codes)
-
-    pending_response = requests.post(
-        pending_url,
-        headers=HEADERS,
-        json={"item_codes": item_codes}
-    ).json()
-    # print(pending_response)
-
-    pending_rows = pending_response.get("message", [])
-
     pending_map = {}
     for row in pending_rows:
-        item_code = row.get("item_code")
-        sold_qty = float(row.get("sold_qty") or 0)
-        pending_map[item_code] = sold_qty
+        pending_map[row.get("item_code")] = float(row.get("sold_qty") or 0)
 
-
-    # 3️⃣ Final stock calculation
     stock_map = {}
-
     for code in item_codes:
         base = bin_map.get(code, 0)
         sold = pending_map.get(code, 0)
-        available = base - sold
-        stock_map[code] = max(available, 0)
+        stock_map[code] = max(base - sold, 0)
 
-    # 🔥 4️⃣ Apply availability filter
+    # 4️⃣ Apply filters
     if availability == "in-stock":
-        items_data = [
-            item for item in items_data
-            if stock_map.get(item["item_code"], 0) > 0
-        ]
-
+        items_data = [i for i in items_data if stock_map.get(i["item_code"], 0) > 0]
     elif availability == "out-of-stock":
-        items_data = [
-            item for item in items_data
-            if stock_map.get(item["item_code"], 0) <= 0
-        ]
-    
-    # 🔥 Apply price range filter
+        items_data = [i for i in items_data if stock_map.get(i["item_code"], 0) <= 0]
+
     if min_price is not None or max_price is not None:
-        filtered_items = []
+        items_data = [
+            i for i in items_data
+            if (min_price is None or float(price_map.get(i["item_code"], 0)) >= min_price) and
+               (max_price is None or float(price_map.get(i["item_code"], 0)) <= max_price)
+        ]
 
-        for item in items_data:
-            price = float(price_map.get(item["item_code"], 0))
-
-            if min_price is not None and price < min_price:
-                continue
-
-            if max_price is not None and price > max_price:
-                continue
-
-            filtered_items.append(item)
-
-        items_data = filtered_items
-
-    # 🔥 Ensure max 24 (never exceed)
-    items_data = items_data[:40]
+    # 5️⃣ Apply sorting
+    if sort_by == "low_to_high":
+        items_data = sorted(items_data, key=lambda i: float(price_map.get(i["item_code"], 0) or 0))
+    elif sort_by == "high_to_low":
+        items_data = sorted(items_data, key=lambda i: float(price_map.get(i["item_code"], 0) or 0), reverse=True)
 
     total_count = len(items_data)
 
-    # 🔥 5️⃣ Pagination (12 per page)
+    # 6️⃣ Pagination
     start = (page - 1) * page_size
-    end = start + page_size
-    items_page = items_data[start:end]
+    items_page = items_data[start:start + page_size]
 
-    # 4️⃣ Get back-side image from File doctype
-    file_url = (
-        f"{FRAPPE_URL}/api/resource/File?"
-        f'filters=[["File","attached_to_doctype","=","Item"],'
-        f'["File","attached_to_name","in",{item_codes_json}]]'
-        f'&fields=["attached_to_name","file_url"]'
-    )
-
-    file_response = requests.get(file_url, headers=HEADERS).json()
-    file_data = file_response.get("data", [])
-
-    # Map item_code -> back image
-    back_image_map = {}
-
-    for f in file_data:
-        item_code = f["attached_to_name"]
-        file_url = f["file_url"]
-
-        # Ignore DP image if needed (optional filtering logic)
-        if item_code not in back_image_map:
-            back_image_map[item_code] = file_url
-
-    # 🔥 6️⃣ Merge everything
+    # 7️⃣ Build response
     final_data = []
-
-    # print("DEBUG STOCK MAP:", stock_map.get("MILK"))
-
     for item in items_page:
         item_code = item["item_code"]
         main_image = item.get("image")
-
-        back_image = None
-
-        # Find attachment that is NOT the main image
-        for f in file_data:
-            if (
-                f["attached_to_name"] == item_code and
-                f["file_url"] != main_image
-            ):
-                back_image = f["file_url"]
-                break
+        back_image = next(
+            (f["file_url"] for f in file_data
+             if f["attached_to_name"] == item_code and f["file_url"] != main_image),
+            None
+        )
         final_data.append({
-            "item_code": item["item_code"],
+            "item_code": item_code,
             "item_name": item["item_name"],
-            "image": item["image"],
-            "back_image":back_image,
+            "image": main_image,
+            "back_image": back_image,
             "unit": item["stock_uom"],
             "food_stamp": item.get("custom_food_stamp_enable"),
             "non_food": item.get("custom_non_food"),
             "tobacco": item.get("custom_tobaco"),
-            "price": price_map.get(item["item_code"], 0),
+            "price": price_map.get(item_code, 0),
             "category": item["item_group"],
             "brand": None,
-            "stock": stock_map.get(item["item_code"], 0)
+            "stock": stock_map.get(item_code, 0)
         })
 
     return Response({
@@ -860,7 +799,6 @@ def all_products(request):
         "page": page,
         "page_size": page_size
     })
-
 
 @api_view(['POST'])
 def wishlist_products(request):
