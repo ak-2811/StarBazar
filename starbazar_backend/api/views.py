@@ -15,6 +15,57 @@ from django.views.decorators.csrf import csrf_exempt
 import os
 from dotenv import load_dotenv
 load_dotenv()
+from django.views.decorators.http import require_POST
+
+from .services.clover_service import start_clover_payment, CloverServiceError
+
+
+@csrf_exempt
+@require_POST
+def start_clover_payment_view(request):
+    try:
+        body = json.loads(request.body)
+
+        order_number = body.get("order_number")
+        register_code = body.get("register_code")
+        amount = body.get("amount")
+        payment_mode = body.get("payment_mode")
+        customer = body.get("customer")
+        items = body.get("items", [])
+
+        if not order_number:
+            return JsonResponse({"success": False, "error": "order_number is required"}, status=400)
+
+        if not register_code:
+            return JsonResponse({"success": False, "error": "register_code is required"}, status=400)
+
+        if amount is None:
+            return JsonResponse({"success": False, "error": "amount is required"}, status=400)
+
+        try:
+            amount = int(amount)
+        except Exception:
+            return JsonResponse({"success": False, "error": "amount must be integer cents"}, status=400)
+
+        if payment_mode not in ["Credit Card", "EBT"]:
+            return JsonResponse({"success": False, "error": "payment_mode must be Credit Card or EBT"}, status=400)
+
+        result = start_clover_payment(
+            order_number=order_number,
+            register_code=register_code,
+            amount=amount,
+            payment_mode=payment_mode,
+            customer=customer,
+            items=items
+        )
+
+        return JsonResponse(result, status=200 if result.get("success") else 400)
+
+    except CloverServiceError as exc:
+        return JsonResponse({"success": False, "error": str(exc)}, status=500)
+
+    except Exception as exc:
+        return JsonResponse({"success": False, "error": f"Unexpected error: {str(exc)}"}, status=500)
 
 CLOVER_MERCHANT_ID = "JT3NAZ6NGHFY1"
 CLOVER_PRIVATE_TOKEN = "857aada8-8be5-130c-41cd-26969665301f"
@@ -90,6 +141,7 @@ def create_clover_checkout(request):
 
         response = requests.post(
             "https://apisandbox.dev.clover.com/invoicingcheckoutservice/v1/checkouts",
+            # "https://api.clover.com/invoicingcheckoutservice/v1/checkouts",
             headers=headers,
             json=payload,
             timeout=30
@@ -101,6 +153,9 @@ def create_clover_checkout(request):
                 "error": "Clover checkout creation failed",
                 "details": response.text
             }, status=400)
+        
+        print("CLOVER STATUS:", response.status_code)
+        print("CLOVER RESPONSE:", response.text)
 
         clover_data = response.json()
 
@@ -487,7 +542,7 @@ def get_products_by_codes(request):
     # 1️⃣ Fetch items
     items_url = (
         f"{FRAPPE_URL}/api/resource/Item?"
-        f'fields=["name","item_name","image","stock_uom","item_group","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
+        f'fields=["name","item_name","item_code","image","stock_uom","item_group","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
         f"&filters=[[\"name\",\"in\",{item_codes_json}]]"
         f"&limit_page_length=500"
     )
@@ -534,7 +589,7 @@ def get_products_by_codes(request):
 
     for item in items_data:
 
-        code = item["name"]
+        code = item["item_code"]
 
         final_data.append({
             "item_code": code,
@@ -561,6 +616,7 @@ def get_categories(request):
     url = (
         f"{FRAPPE_URL}/api/resource/Item%20Group?"
         f'fields=["name"]'
+        f'&filters=[["name","!=","Scheme"]]'
         f"&limit_page_length=500"
     )
 
@@ -597,6 +653,8 @@ def all_products(request):
 
     filters = []
 
+    filters.append(["item_group", "!=", "Scheme"])
+
     if category and category != "all":
         filters.append(["item_group", "=", category])
 
@@ -606,7 +664,7 @@ def all_products(request):
     # 🔥 1️⃣ Fetch RANDOM 24 items
     items_url = (
         f"{FRAPPE_URL}/api/resource/Item?"
-        f'fields=["name","item_name","image","stock_uom","item_group","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
+        f'fields=["name","item_name","item_code","image","stock_uom","item_group","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
         f"&limit_page_length=100"
         f"&order_by=RAND()"
     )
@@ -624,7 +682,7 @@ def all_products(request):
         })
 
     # Extract item codes
-    item_codes = [item["name"] for item in items_data]
+    item_codes = [item["item_code"] for item in items_data]
     item_codes_json = json.dumps(item_codes)
 
     # 🔥 2️⃣ Batch fetch prices
@@ -648,13 +706,13 @@ def all_products(request):
         if sort_by == "low_to_high":
             items_data = sorted(
                 items_data,
-                key=lambda item: float(price_map.get(item["name"], 0) or 0)
+                key=lambda item: float(price_map.get(item["item_code"], 0) or 0)
             )
 
         elif sort_by == "high_to_low":
             items_data = sorted(
                 items_data,
-                key=lambda item: float(price_map.get(item["name"], 0) or 0),
+                key=lambda item: float(price_map.get(item["item_code"], 0) or 0),
                 reverse=True
             )
 
@@ -705,13 +763,13 @@ def all_products(request):
     if availability == "in-stock":
         items_data = [
             item for item in items_data
-            if stock_map.get(item["name"], 0) > 0
+            if stock_map.get(item["item_code"], 0) > 0
         ]
 
     elif availability == "out-of-stock":
         items_data = [
             item for item in items_data
-            if stock_map.get(item["name"], 0) <= 0
+            if stock_map.get(item["item_code"], 0) <= 0
         ]
     
     # 🔥 Apply price range filter
@@ -719,7 +777,7 @@ def all_products(request):
         filtered_items = []
 
         for item in items_data:
-            price = float(price_map.get(item["name"], 0))
+            price = float(price_map.get(item["item_code"], 0))
 
             if min_price is not None and price < min_price:
                 continue
@@ -769,7 +827,7 @@ def all_products(request):
     # print("DEBUG STOCK MAP:", stock_map.get("MILK"))
 
     for item in items_page:
-        item_code = item["name"]
+        item_code = item["item_code"]
         main_image = item.get("image")
 
         back_image = None
@@ -783,7 +841,7 @@ def all_products(request):
                 back_image = f["file_url"]
                 break
         final_data.append({
-            "item_code": item["name"],
+            "item_code": item["item_code"],
             "item_name": item["item_name"],
             "image": item["image"],
             "back_image":back_image,
@@ -791,10 +849,10 @@ def all_products(request):
             "food_stamp": item.get("custom_food_stamp_enable"),
             "non_food": item.get("custom_non_food"),
             "tobacco": item.get("custom_tobaco"),
-            "price": price_map.get(item["name"], 0),
+            "price": price_map.get(item["item_code"], 0),
             "category": item["item_group"],
             "brand": None,
-            "stock": stock_map.get(item["name"], 0)
+            "stock": stock_map.get(item["item_code"], 0)
         })
 
     return Response({
@@ -820,7 +878,7 @@ def wishlist_products(request):
     items_url = (
         f"{FRAPPE_URL}/api/resource/Item?"
         f'filters=[["Item","name","in",{item_codes_json}]]'
-        f'&fields=["name","item_name","image","stock_uom","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
+        f'&fields=["name","item_name","item_code","image","stock_uom","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
     )
 
     items_response = requests.get(items_url, headers=HEADERS).json()
@@ -889,13 +947,13 @@ def wishlist_products(request):
     if availability == "in-stock":
         items_data = [
             item for item in items_data
-            if stock_map.get(item["name"], 0) > 0
+            if stock_map.get(item["item_code"], 0) > 0
         ]
 
     elif availability == "out-of-stock":
         items_data = [
             item for item in items_data
-            if stock_map.get(item["name"], 0) <= 0
+            if stock_map.get(item["item_code"], 0) <= 0
         ]
     
     # 4️⃣ Get back-side image from File doctype
@@ -924,9 +982,9 @@ def wishlist_products(request):
     final_data = []
 
     for item in items_data:
-        code = item["name"]
+        code = item["item_code"]
         stock_qty = stock_map.get(code, 0)
-        item_code = item["name"]
+        item_code = item["item_code"]
         main_image = item.get("image")
 
         back_image = None
@@ -977,7 +1035,7 @@ def best_sellers(request):
     items_url = (
         f"{FRAPPE_URL}/api/resource/Item?"
         f'filters=[["Item","name","in",{item_codes_json}]]'
-        f'&fields=["name","item_name","image","stock_uom","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
+        f'&fields=["name","item_name","item_code","image","stock_uom","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
     )
 
     items_response = requests.get(items_url, headers=HEADERS).json()
@@ -1071,13 +1129,13 @@ def best_sellers(request):
     if availability == "in-stock":
         items_data = [
             item for item in items_data
-            if stock_map.get(item["name"], 0) > 0
+            if stock_map.get(item["item_code"], 0) > 0
         ]
 
     elif availability == "out-of-stock":
         items_data = [
             item for item in items_data
-            if stock_map.get(item["name"], 0) <= 0
+            if stock_map.get(item["item_code"], 0) <= 0
         ]
 
     # Merge item + price
@@ -1086,11 +1144,11 @@ def best_sellers(request):
     print("PENDING MAP:", pending_map)
 
     for item in items_data:
-        item_code = item["name"]
+        item_code = item["item_code"]
         main_image = item.get("image")
 
         back_image = None
-        stock_qty = stock_map.get(item["name"], 0)
+        stock_qty = stock_map.get(item["item_code"], 0)
         print("BIN MAP:", bin_map)
         print("PENDING MAP:", pending_map)
 
@@ -1103,7 +1161,7 @@ def best_sellers(request):
                 back_image = f["file_url"]
                 break
         final_data.append({
-        "item_code": item["name"],
+        "item_code": item["item_code"],
         "item_name": item["item_name"],
         "image": item["image"],
         "back_image": back_image,
@@ -1111,7 +1169,7 @@ def best_sellers(request):
         "food_stamp": item.get("custom_food_stamp_enable"),
         "non_food": item.get("custom_non_food"),
         "tobacco": item.get("custom_tobaco"),
-        "price": price_map.get(item["name"], 0),
+        "price": price_map.get(item["item_code"], 0),
         "in_stock": stock_qty > 0,
         "stock":stock_qty,
     })
@@ -1138,7 +1196,7 @@ def shop_all_product(request):
     items_url = (
         f"{FRAPPE_URL}/api/resource/Item?"
         f'filters=[["Item","name","in",{item_codes_json}]]'
-        f'&fields=["name","item_name","image","stock_uom","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
+        f'&fields=["name","item_name","item_code","image","stock_uom","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
     )
 
     items_response = requests.get(items_url, headers=HEADERS).json()
@@ -1232,23 +1290,23 @@ def shop_all_product(request):
     if availability == "in-stock":
         items_data = [
             item for item in items_data
-            if stock_map.get(item["name"], 0) > 0
+            if stock_map.get(item["item_code"], 0) > 0
         ]
 
     elif availability == "out-of-stock":
         items_data = [
             item for item in items_data
-            if stock_map.get(item["name"], 0) <= 0
+            if stock_map.get(item["item_code"], 0) <= 0
         ]
 
     # Merge item + price
     final_data = []
     for item in items_data:
-        item_code = item["name"]
+        item_code = item["item_code"]
         main_image = item.get("image")
 
         back_image = None
-        stock_qty=stock_map.get(item["name"], 0)
+        stock_qty=stock_map.get(item["item_code"], 0)
 
         # Find attachment that is NOT the main image
         for f in file_data:
@@ -1259,7 +1317,7 @@ def shop_all_product(request):
                 back_image = f["file_url"]
                 break
         final_data.append({
-            "item_code": item["name"],
+            "item_code": item["item_code"],
             "item_name": item["item_name"],
             "image": item["image"],
             "back_image": back_image,
@@ -1267,7 +1325,7 @@ def shop_all_product(request):
             "food_stamp": item.get("custom_food_stamp_enable"),
             "non_food": item.get("custom_non_food"),
             "tobacco": item.get("custom_tobaco"),
-            "price": price_map.get(item["name"], 0),
+            "price": price_map.get(item["item_code"], 0),
             "in_stock":stock_qty>0,
             "stock":stock_qty,
         })
@@ -1366,13 +1424,13 @@ def pricing_offers(request):
     if availability == "in-stock":
         items_data = [
             item for item in items_data
-            if stock_map.get(item["name"], 0) > 0
+            if stock_map.get(item["item_code"], 0) > 0
         ]
 
     elif availability == "out-of-stock":
         items_data = [
             item for item in items_data
-            if stock_map.get(item["name"], 0) <= 0
+            if stock_map.get(item["item_code"], 0) <= 0
         ]
 
 
@@ -1395,7 +1453,7 @@ def pricing_offers(request):
             f"{FRAPPE_URL}/api/resource/Item/{item_code}",
             headers=HEADERS,
             params={
-                "fields": json.dumps(["item_name", "image", "stock_uom","custom_food_stamp_enable","custom_non_food","custom_tobaco"])
+                "fields": json.dumps(["item_name","item_code", "image", "stock_uom","custom_food_stamp_enable","custom_non_food","custom_tobaco"])
             }
         ).json()
 
