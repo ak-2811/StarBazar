@@ -63,7 +63,7 @@ useEffect(() => {
 }, [])
 
 useEffect(() => {
-  axios.get("http://localhost:8000/api/pricing-offers/")
+  axios.get(`${import.meta.env.VITE_DJANGO_URL}/pricing-offers/`)
     .then(res => {
       setSpecialOffers(res.data)
     })
@@ -126,7 +126,7 @@ const goToCheckout = () => {
   
       try {
         const res = await axios.get(
-          "http://localhost:8000/api/wishlist/",
+          `${import.meta.env.VITE_DJANGO_URL}/wishlist/`,
           {
             headers: { Authorization: `Bearer ${access}` }
           }
@@ -144,7 +144,7 @@ const goToCheckout = () => {
         if (err.response?.status === 401 && refresh) {
           try {
             const refreshRes = await axios.post(
-              "http://localhost:8000/api/token/refresh/",
+              `${import.meta.env.VITE_DJANGO_URL}/token/refresh/`,
               { refresh }
             )
   
@@ -153,7 +153,7 @@ const goToCheckout = () => {
   
             // Retry wishlist
             const retry = await axios.get(
-              "http://localhost:8000/api/wishlist/",
+              `${import.meta.env.VITE_DJANGO_URL}/api/wishlist/`,
               {
                 headers: { Authorization: `Bearer ${newAccess}` }
               }
@@ -195,7 +195,7 @@ const goToCheckout = () => {
   const [categories, setCategories] = useState(['all'])
 
   useEffect(() => {
-  axios.get("http://localhost:8000/api/categories/")
+  axios.get(`${import.meta.env.VITE_DJANGO_URL}/categories/`)
     .then(res => {
       setCategories(['all', ...res.data.categories])
     })
@@ -296,7 +296,7 @@ function decreaseQty(product) {
   
     try {
       const res = await axios.post(
-        "http://localhost:8000/api/wishlist/toggle/",
+        `${import.meta.env.VITE_DJANGO_URL}/wishlist/toggle/`,
         { item_code },
         {
           headers: { Authorization: `Bearer ${access}` }
@@ -313,7 +313,7 @@ function decreaseQty(product) {
       if (err.response?.status === 401 && refresh) {
         try {
           const refreshRes = await axios.post(
-            "http://localhost:8000/api/token/refresh/",
+            `${import.meta.env.VITE_DJANGO_URL}/token/refresh/`,
             { refresh }
           )
   
@@ -321,7 +321,7 @@ function decreaseQty(product) {
           localStorage.setItem("access", newAccess)
   
           const retry = await axios.post(
-            "http://localhost:8000/api/wishlist/toggle/",
+            `${import.meta.env.VITE_DJANGO_URL}/wishlist/toggle/`,
             { item_code },
             {
               headers: { Authorization: `Bearer ${newAccess}` }
@@ -388,7 +388,7 @@ function decreaseQty(product) {
   }
 
   useEffect(() => {
-  axios.get("http://localhost:8000/api/all-products/", {
+  axios.get(`${import.meta.env.VITE_DJANGO_URL}/all-products/`, {
     params: {
       page: currentPage,
       page_size: 12,
@@ -539,7 +539,7 @@ const handleLogout = () => {
               <div className="nutrition-modal-body">
                 <div className="modal-image-container">
                   <img
-                    src={`http://groceryv15.localhost:8001/${
+                    src={`${import.meta.env.VITE_FRAPPE_URL}/${
                       showBack && selectedNutrition.back_image
                         ? selectedNutrition.back_image
                         : selectedNutrition.image
@@ -663,7 +663,7 @@ const handleLogout = () => {
                     <div className="product-img-front">
                       <div className="product-img">
                         {product.image ? (
-                          <img src={`http://groceryv15.localhost:8001/${product.image}`} alt={product.item_code} />
+                          <img src={`${import.meta.env.VITE_FRAPPE_URL}/${product.image}`} alt={product.item_code} />
                         ) : (
                           product.emoji
                         )}

@@ -45,7 +45,7 @@ function Wishlist() {
 
   // Getting the offer products
   useEffect(() => {
-  axios.get("http://localhost:8000/api/pricing-offers/")
+  axios.get(`${import.meta.env.VITE_DJANGO_URL}/pricing-offers/`)
     .then(res => {
       setSpecialOffers(res.data)
     })
@@ -67,7 +67,7 @@ useEffect(() => {
   }
   setLoading(true)
 
-  axios.get("http://localhost:8000/api/wishlist/", {
+  axios.get(`${import.meta.env.VITE_DJANGO_URL}/wishlist/`, {
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -90,7 +90,7 @@ useEffect(() => {
 
     // Fetch full product data
     return axios.post(
-      "http://localhost:8000/api/wishlist-products/",
+      `${import.meta.env.VITE_DJANGO_URL}/wishlist-products/`,
       { item_codes: likedCodes }
     )
 
@@ -199,7 +199,7 @@ function toggleLike(code) {
   }
 
   axios.post(
-    "http://localhost:8000/api/wishlist/toggle/",
+    `${import.meta.env.VITE_DJANGO_URL}/wishlist/toggle/`,
     { item_code: code },
     {
       headers: {
@@ -314,7 +314,7 @@ function toggleLike(code) {
                       <div className="product-img-front">
                         <div className="product-img">
                           {p.image ? (
-                            <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} />
+                            <img src={`${import.meta.env.VITE_FRAPPE_URL}/${p.image}`} alt={p.item_code} />
                           ) : (
                             p.emoji
                           )}
@@ -380,7 +380,7 @@ function toggleLike(code) {
                 <div className="nutrition-modal-body">
                   <div className="modal-image-container">
                     <img
-                      src={`http://groceryv15.localhost:8001/${
+                      src={`${import.meta.env.VITE_FRAPPE_URL}/${
                         showBack && selectedNutrition.back_image
                           ? selectedNutrition.back_image
                           : selectedNutrition.image

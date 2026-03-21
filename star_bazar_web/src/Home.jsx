@@ -62,10 +62,10 @@ function Home() {
 
   // Getting Best Seller Products
   useEffect(() => {
-  axios.get("http://localhost:8000/api/best-sellers/")
+  axios.get(`${import.meta.env.VITE_DJANGO_URL}/best-sellers/`)
     .then(res => {
       setBestSellers(res.data)
-      console.log(res.data)
+      console.log("BEST SELLER DATA ",res.data)
     })
     .catch(err => {
       console.error("Error fetching best sellers:", err)
@@ -74,7 +74,7 @@ function Home() {
 
   // Getting All Product For Home Page
   useEffect(() => {
-  axios.get("http://localhost:8000/api/shop-all-products/")
+  axios.get(`${import.meta.env.VITE_DJANGO_URL}/shop-all-products/`)
     .then(res => {
       setShopAllProducts(res.data)
     })
@@ -85,7 +85,7 @@ function Home() {
 
 // Getting the offer products
   useEffect(() => {
-  axios.get("http://localhost:8000/api/pricing-offers/")
+  axios.get(`${import.meta.env.VITE_DJANGO_URL}/pricing-offers/`)
     .then(res => {
       setSpecialOffers(res.data)
     })
@@ -177,7 +177,7 @@ useEffect(() => {
 
     try {
       const res = await axios.get(
-        "http://localhost:8000/api/wishlist/",
+        `${import.meta.env.VITE_DJANGO_URL}/wishlist/`,
         {
           headers: { Authorization: `Bearer ${access}` }
         }
@@ -195,7 +195,7 @@ useEffect(() => {
       if (err.response?.status === 401 && refresh) {
         try {
           const refreshRes = await axios.post(
-            "http://localhost:8000/api/token/refresh/",
+            `${import.meta.env.VITE_DJANGO_URL}/token/refresh/`,
             { refresh }
           )
 
@@ -204,7 +204,7 @@ useEffect(() => {
 
           // Retry wishlist
           const retry = await axios.get(
-            "http://localhost:8000/api/wishlist/",
+            `${import.meta.env.VITE_DJANGO_URL}/wishlist/`,
             {
               headers: { Authorization: `Bearer ${newAccess}` }
             }
@@ -238,7 +238,7 @@ async function toggleLike(item_code) {
 
   try {
     const res = await axios.post(
-      "http://localhost:8000/api/wishlist/toggle/",
+      `${import.meta.env.VITE_DJANGO_URL}/wishlist/toggle/`,
       { item_code },
       {
         headers: { Authorization: `Bearer ${access}` }
@@ -255,7 +255,7 @@ async function toggleLike(item_code) {
     if (err.response?.status === 401 && refresh) {
       try {
         const refreshRes = await axios.post(
-          "http://localhost:8000/api/token/refresh/",
+          `${import.meta.env.VITE_DJANGO_URL}/token/refresh/`,
           { refresh }
         )
 
@@ -263,7 +263,7 @@ async function toggleLike(item_code) {
         localStorage.setItem("access", newAccess)
 
         const retry = await axios.post(
-          "http://localhost:8000/api/wishlist/toggle/",
+          `${import.meta.env.VITE_DJANGO_URL}/wishlist/toggle/`,
           { item_code },
           {
             headers: { Authorization: `Bearer ${newAccess}` }
@@ -418,7 +418,7 @@ const handleLogout = () => {
                   <div className="product-img-front">
                     <div className="product-img">
                       {p.image ? (
-                        <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} />
+                        <img src={`${import.meta.env.VITE_FRAPPE_URL}/${p.image}`} alt={p.item_code} />
                       ) : (
                         p.emoji
                       )}
@@ -482,7 +482,7 @@ const handleLogout = () => {
                 <div className="nutrition-modal-body">
                   <div className="modal-image-container">
                     <img
-                      src={`http://groceryv15.localhost:8001${
+                      src={`${import.meta.env.VITE_FRAPPE_URL}${
                         showBack && selectedNutrition.back_image
                           ? selectedNutrition.back_image
                           : selectedNutrition.image
@@ -554,7 +554,7 @@ const handleLogout = () => {
                   {liked[p.item_code] ? '❤' : '🤍'}
                 </button> */}
                 <div className="offer-badge">Special Deal</div>
-                <div className="offer-img">{p.image ? <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} /> : p.emoji}</div>
+                <div className="offer-img">{p.image ? <img src={`${import.meta.env.VITE_FRAPPE_URL}/${p.image}`} alt={p.item_code} /> : p.emoji}</div>
                 <div className="offer-body">
                   <div className="offer-name">{p.item_name}</div>
                   <div className="price-section">
@@ -595,7 +595,7 @@ const handleLogout = () => {
                   <div className="product-img-front">
                     <div className="product-img">
                       {p.image ? (
-                        <img src={`http://groceryv15.localhost:8001/${p.image}`} alt={p.item_code} />
+                        <img src={`${import.meta.env.VITE_FRAPPE_URL}/${p.image}`} alt={p.item_code} />
                       ) : (
                         p.emoji
                       )}

@@ -15,7 +15,7 @@ export default function Orders() {
 
   useEffect(() => {
     const token = localStorage.getItem("token")
-    axios.get(`http://localhost:8000/api/orders/?page=${page}&page_size=${pageSize}`, {
+    axios.get(`${import.meta.env.VITE_DJANGO_URL}/orders/?page=${page}&page_size=${pageSize}`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -59,7 +59,7 @@ export default function Orders() {
       const itemCodes = order.items.map(i => i.item_code)
 
       const res = await axios.post(
-        "http://localhost:8000/api/products-by-codes/",
+        `${import.meta.env.VITE_DJANGO_URL}/products-by-codes/`,
         { item_codes: itemCodes }
       )
 

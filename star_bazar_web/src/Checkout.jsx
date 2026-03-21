@@ -19,7 +19,8 @@ useEffect(() => {
   if (itemCodes.length === 0) return;
 
   axios.post(
-    "http://localhost:8000/api/products-by-codes/",
+    // "http://localhost:8000/api/products-by-codes/",
+    `${import.meta.env.VITE_DJANGO_URL}/products-by-codes/`,
     { item_codes: itemCodes }
   )
   .then(res => {
@@ -55,7 +56,7 @@ useEffect(() => {
 const [offers, setOffers] = useState([]);
 useEffect(() => {
 
-  axios.get("http://localhost:8000/api/pricing-offers/")
+  axios.get(`${import.meta.env.VITE_DJANGO_URL}/pricing-offers/`)
   .then(res => {
     setOffers(res.data)
   })
@@ -186,7 +187,7 @@ const cartItems = updatedCart.map(item => ({
   subtotal: item.subtotal,
   original_price: item.item.price,
   is_discounted: item.is_discounted,
-  image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `http://groceryv15.localhost:8001${item.item.image}`) : null,
+  image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `${import.meta.env.VITE_FRAPPE_URL}/${item.item.image}`) : null,
   item_code: item.item.item_code
 }));
 // Totals
@@ -285,7 +286,7 @@ useEffect(() => {
   const token = localStorage.getItem("token");
   if (!token) return;
 
-  axios.get("http://localhost:8000/api/profile/", {
+  axios.get(`${import.meta.env.VITE_DJANGO_URL}/profile/`, {
     headers: { Authorization: `Bearer ${token}` }
   })
   .then(res => {
@@ -410,7 +411,7 @@ useEffect(() => {
         image: item.item.image
           ? (item.item.image.startsWith("http")
               ? item.item.image
-              : `http://groceryv15.localhost:8001${item.item.image}`)
+              : `${import.meta.env.VITE_FRAPPE_URL}/${item.item.image}`)
           : null,
       }));
 
@@ -430,7 +431,7 @@ useEffect(() => {
       };
 
       const res = await axios.post(
-        "http://localhost:8000/api/create-clover-checkout/",
+        `${import.meta.env.VITE_DJANGO_URL}/create-clover-checkout/`,
         payload
       );
 
