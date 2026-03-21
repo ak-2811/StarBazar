@@ -564,9 +564,9 @@ useEffect(() => {
             </div>
 
             <div className="confirmation-actions">
-              <button className="btn-primary" onClick={() => onNavigate('/')}>
+              <button className="btn-primary" onClick={handleContinueShopping}>
                 Continue Shopping
-              </button>
+            </button>
 
               <button className="btn-secondary" onClick={handleViewOrder}>
                 View Orders
@@ -644,8 +644,8 @@ useEffect(() => {
             <div className="empty-icon">🛒</div>
             <h2>Your cart is empty</h2>
             <p>Add some fresh groceries to get started!</p>
-            <button className="btn-primary" onClick={() => onNavigate('products')}>
-              Continue Shopping
+            <button className="btn-primary" onClick={handleContinueShopping}>
+                Continue Shopping
             </button>
           </div>
         ) : (
