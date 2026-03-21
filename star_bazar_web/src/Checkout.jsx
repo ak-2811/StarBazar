@@ -460,6 +460,7 @@ useEffect(() => {
     });
 
     if (onNavigate) onNavigate('home');
+    navigate('/'); 
   };
 
   // Additional confirmation helpers
