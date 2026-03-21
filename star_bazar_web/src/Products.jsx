@@ -504,7 +504,7 @@ const handleLogout = () => {
           <h1>Shop All Products</h1>
           <p>Browse our complete collection of fresh groceries</p>
           <div className="hero-categories">
-            {['Home','Shop All','Contact Us'].map((c) => (
+            {['Home','Shop All'].map((c) => (
               <button 
                 key={c} 
                 className={`hero-cat-btn ${c === 'Shop All' ? 'active' : ''}`}

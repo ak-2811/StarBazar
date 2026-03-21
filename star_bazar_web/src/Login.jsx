@@ -94,11 +94,11 @@ function Login() {
             </div>
           </div>
 
-          <div className="form-footer">
+          {/* <div className="form-footer">
             <Link to="/forgot-password" className="forgot-password-link">
               Forgot Password?
             </Link>
-          </div>
+          </div> */}
 
           <button 
             type="submit" 

@@ -392,7 +392,7 @@ const handleLogout = () => {
           <h1>Fresh Groceries, Faster Checkout</h1>
           <p>Shop the best quality products at great prices!</p>
           <div className="hero-categories">
-            {['Home','Shop All','Contact Us'].map((c, idx) => (
+            {['Home','Shop All'].map((c, idx) => (
               <button key={c} 
               className={`hero-cat-btn ${idx === 0 ? 'active' : ''}`}
               onClick={() => {
