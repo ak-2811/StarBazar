@@ -666,7 +666,6 @@ def all_products(request):
         f"{FRAPPE_URL}/api/resource/Item?"
         f'fields=["name","item_name","item_code","image","stock_uom","item_group","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
         f"&limit_page_length=100"
-        f"&order_by=RAND()"
     )
 
     if filters:
