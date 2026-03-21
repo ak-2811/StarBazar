@@ -196,10 +196,11 @@ def user_profile(request):
 FRAPPE_URL = os.environ.get("FRAPPE_URL", "http://localhost:8000")
 API_KEY = os.environ.get("FRAPPE_API_KEY", "")
 API_SECRET = os.environ.get("FRAPPE_API_SECRET", "")
+FRAPPE_HOST = os.environ.get("FRAPPE_HOST", "localhost")
 
 HEADERS = {
     "Authorization": f"token {API_KEY}:{API_SECRET}",
-    "Host": "groceryv15.localhost"
+    "Host": FRAPPE_HOST
 }
 
 
