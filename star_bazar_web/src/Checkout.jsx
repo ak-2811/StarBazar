@@ -564,7 +564,7 @@ useEffect(() => {
             </div>
 
             <div className="confirmation-actions">
-              <button className="btn-primary" onClick={handleContinueShopping}>
+              <button className="btn-primary" onClick={() => onNavigate('/')}>
                 Continue Shopping
               </button>
 
