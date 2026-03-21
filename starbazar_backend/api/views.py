@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 load_dotenv()
 from django.views.decorators.http import require_POST
 
-from .services.clover_service import start_clover_payment, CloverServiceError
+
 
 
 @csrf_exempt
