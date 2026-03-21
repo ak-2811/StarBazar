@@ -615,7 +615,7 @@ useEffect(() => {
           <h1>Checkout</h1>
           <p>Complete your purchase securely</p>
           <div className="hero-categories">
-            {['Home','Shop All','Contact Us','Checkout'].map((c) => (
+            {['Home','Shop All','Checkout'].map((c) => (
               <button 
                 key={c} 
                 className={`hero-cat-btn ${c === 'Checkout' ? 'active' : ''}`}
