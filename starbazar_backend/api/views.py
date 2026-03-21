@@ -280,7 +280,7 @@ def create_sales_invoice(request):
                 "item_code": item_code,
                 "qty": qty - 1,
                 "rate": base_rate,
-                "warehouse": "Stores - A"
+                "warehouse": "Stores - SB"
             })
 
             # last item adjusted
@@ -288,14 +288,14 @@ def create_sales_invoice(request):
                 "item_code": item_code,
                 "qty": 1,
                 "rate": round(base_rate - diff, 2),
-                "warehouse": "Stores - A"
+                "warehouse": "Stores - SB"
             })
         else:
             invoice_items.append({
                 "item_code": item_code,
                 "qty": qty,
                 "rate": base_rate,
-                "warehouse": "Stores - A"
+                "warehouse": "Stores - SB"
             })
 
         total_amount += amount
@@ -520,7 +520,7 @@ def get_products_by_codes(request):
     bin_url = (
         f"{FRAPPE_URL}/api/resource/Bin?"
         f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - A"]]'
+        f'["warehouse","=","Stores - SB"]]'
         f'&fields=["item_code","actual_qty"]'
     )
 
@@ -664,7 +664,7 @@ def all_products(request):
     bin_url = (
         f"{FRAPPE_URL}/api/resource/Bin?"
         f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - A"]]'
+        f'["warehouse","=","Stores - SB"]]'
         f'&fields=["item_code","actual_qty"]'
     )
 
@@ -846,11 +846,11 @@ def wishlist_products(request):
         if price["item_code"] not in price_map:
             price_map[price["item_code"]] = price["price_list_rate"]
 
-    # 3️⃣ Get base stock from Bin (Stores - A)
+    # 3️⃣ Get base stock from Bin (Stores - SB)
     bin_url = (
         f"{FRAPPE_URL}/api/resource/Bin?"
         f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - A"]]'
+        f'["warehouse","=","Stores - SB"]]'
         f'&fields=["item_code","actual_qty"]'
     )
 
@@ -1030,7 +1030,7 @@ def best_sellers(request):
     bin_url = (
         f"{FRAPPE_URL}/api/resource/Bin?"
         f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - A"]]'
+        f'["warehouse","=","Stores - SB"]]'
         f'&fields=["item_code","actual_qty"]'
     )
 
@@ -1191,7 +1191,7 @@ def shop_all_product(request):
     bin_url = (
         f"{FRAPPE_URL}/api/resource/Bin?"
         f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - A"]]'
+        f'["warehouse","=","Stores - SB"]]'
         f'&fields=["item_code","actual_qty"]'
     )
 
@@ -1325,7 +1325,7 @@ def pricing_offers(request):
     bin_url = (
         f"{FRAPPE_URL}/api/resource/Bin?"
         f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - A"]]'
+        f'["warehouse","=","Stores - SB"]]'
         f'&fields=["item_code","actual_qty"]'
     )
 

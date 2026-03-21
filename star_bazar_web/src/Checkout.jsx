@@ -882,8 +882,8 @@ useEffect(() => {
           </div>
           <div className="footer-right">
             <div className="company-info">
-              <h4>StarBazar Inc.</h4>
-              <p>123 Main Street<br />New York, NY 10001<br />USA</p>
+              <h4>StarBazar</h4>
+              <p>📍 1603 W Palmetto<br />St Florence, SC 29501, USA<br/>📞 +1 (843) 799-1099<br/>🕐 Mon-Sun: 10:00 AM - 8:00 PM</p>
             </div>
           </div>
         </div>
