@@ -12,6 +12,9 @@ from django.contrib.auth.models import User
 from .models import Wishlist,Order,OrderItem
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 CLOVER_MERCHANT_ID = "JT3NAZ6NGHFY1"
 CLOVER_PRIVATE_TOKEN = "857aada8-8be5-130c-41cd-26969665301f"
@@ -190,9 +193,9 @@ def user_profile(request):
     })
 
 
-FRAPPE_URL = "http://172.28.180.147:8001"
-API_KEY = "823008797018d0a"
-API_SECRET = "c3977b78a0e37d6"
+FRAPPE_URL = os.environ.get("FRAPPE_URL", "http://localhost:8000")
+API_KEY = os.environ.get("FRAPPE_API_KEY", "")
+API_SECRET = os.environ.get("FRAPPE_API_SECRET", "")
 
 HEADERS = {
     "Authorization": f"token {API_KEY}:{API_SECRET}",
