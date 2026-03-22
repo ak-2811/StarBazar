@@ -379,7 +379,7 @@ def create_sales_invoice(request):
     payload = {
         "doctype": "Sales Invoice",
         "customer": customer_name,
-        "company": "Akshat",
+        "company": "Star Bazar",
 
         "currency": "USD",
         "selling_price_list": "Standard Selling",
