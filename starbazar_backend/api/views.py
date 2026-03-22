@@ -68,7 +68,7 @@ def start_clover_payment_view(request):
         return JsonResponse({"success": False, "error": f"Unexpected error: {str(exc)}"}, status=500)
 
 CLOVER_MERCHANT_ID = "JT3NAZ6NGHFY1"
-CLOVER_PRIVATE_TOKEN = "d66e8100-81fb-693b-f350-2871d9c9b7ed"
+CLOVER_PRIVATE_TOKEN = "d2b09fbc-a676-9845-ac86-b7d96b8a5334"
 
 @csrf_exempt
 def create_clover_checkout(request):
