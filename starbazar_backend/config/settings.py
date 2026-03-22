@@ -27,7 +27,7 @@ SECRET_KEY = "django-insecure-rea+nv)oam+zmv4#c34f*v7gc0%zgobn#mo@s&pcag72a*az18
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['104.236.98.141', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['104.236.98.141', 'localhost', '127.0.0.1',"*"]
 
 
 # Application definition
@@ -52,6 +52,7 @@ REST_FRAMEWORK = {
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
+    "https://104.236.98.141:3000",
     "http://104.236.98.141:3000",
     "http://104.236.98.141",
     "http://localhost:3000",
@@ -115,6 +116,7 @@ DATABASES = {
 }
 
 CSRF_TRUSTED_ORIGINS = [
+    "https://104.236.98.141:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://104.236.98.141:3000",

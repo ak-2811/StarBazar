@@ -114,8 +114,8 @@ def create_clover_checkout(request):
                 "unitQty": 1
             })
 
-        success_url = "https://example.com/success"
-        failure_url = "https://example.com/failure"
+        success_url = "https://104.236.98.141:3000/checkout?payment=success&order_id=" + order_id
+        failure_url = "https://104.236.98.141:3000/checkout?payment=failed&order_id=" + order_id
 
         payload = {
             "customer": {
