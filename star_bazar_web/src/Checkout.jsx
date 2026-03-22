@@ -375,7 +375,7 @@ useEffect(() => {
   const orderId = params.get("order_id");
 
   if (!payment) return;
-
+  console.log("Payment status from URL:", payment, "Order ID:", orderId);
   if (payment === "success") {
 
     const alreadyCreated = localStorage.getItem("invoice_created");
@@ -390,7 +390,16 @@ useEffect(() => {
       try {
         const savedPayload = JSON.parse(localStorage.getItem("order_payload"));
 
-        if (!savedPayload) return;
+        // If payload isn't available (common when gateway redirects to our site),
+        // still show the thank-you screen using the order_id returned by the gateway.
+        if (!savedPayload) {
+          setOrderPlaced(true);
+          setOrderNumber(orderId || "");
+          if (orderId) localStorage.setItem("invoice_created", orderId);
+          localStorage.removeItem("cart");
+          localStorage.removeItem("order_payload");
+          return;
+        }
 
         const res = await axios.post(
           `${import.meta.env.VITE_DJANGO_URL}/create-sales-invoice/`,
@@ -400,13 +409,16 @@ useEffect(() => {
         setOrderPlaced(true);
         setOrderNumber(orderId || res.data.invoice || "");
 
-        localStorage.setItem("invoice_created", orderId);
+        localStorage.setItem("invoice_created", orderId || res.data.invoice || "");
 
         localStorage.removeItem("cart");
         localStorage.removeItem("order_payload");
 
       } catch (error) {
         console.error("Invoice creation failed:", error);
+        // Fallback: show thank-you page even if invoice creation failed so user isn't stuck.
+        setOrderPlaced(true);
+        setOrderNumber(orderId || "");
       }
     };
 
