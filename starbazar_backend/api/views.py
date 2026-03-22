@@ -130,11 +130,7 @@ def create_clover_checkout(request):
             "shoppingCart": {
                 "lineItems": line_items
             },
-            "paymentOptions": {
-                "card": {
-                    "capture": True
-                }
-            }
+             "paymentSources": ["CARD"] 
         }
 
         headers = {
