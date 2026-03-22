@@ -117,7 +117,7 @@ def create_clover_checkout(request):
         success_url = "https://example.com/success"
         failure_url = "https://example.com/failure"
 
-       payload = {
+        payload = {
                 "customer": {
                     "firstName": first_name,
                     "lastName": last_name,
