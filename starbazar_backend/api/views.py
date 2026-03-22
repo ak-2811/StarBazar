@@ -385,6 +385,7 @@ def create_sales_invoice(request):
         "selling_price_list": "Standard Selling",
         "price_list_currency": "USD",
         "plc_conversion_rate": 1,
+        "conversion_rate": 1, 
 
         "is_pos": 1,
         "update_stock": 1,
