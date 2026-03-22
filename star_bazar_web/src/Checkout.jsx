@@ -375,7 +375,7 @@ useEffect(() => {
   const orderId = params.get("order_id");
 
   if (!payment) return;
-  console.log("Payment status from URL:", payment, "Order ID:", orderId);
+
   if (payment === "success") {
 
     const alreadyCreated = localStorage.getItem("invoice_created");
@@ -389,6 +389,7 @@ useEffect(() => {
     const createInvoice = async () => {
       try {
         const savedPayload = JSON.parse(localStorage.getItem("order_payload"));
+        console.log("Saved payload for invoice creation:", savedPayload);
 
         // If payload isn't available (common when gateway redirects to our site),
         // still show the thank-you screen using the order_id returned by the gateway.
