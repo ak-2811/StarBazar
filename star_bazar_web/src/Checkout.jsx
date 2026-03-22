@@ -381,11 +381,11 @@ useEffect(() => {
     const alreadyCreated = localStorage.getItem("invoice_created");
     console.log("Checking if invoice already created for order ID:", orderId, "Already created:", alreadyCreated);  
 
-    if (alreadyCreated === orderId) {
-      setOrderPlaced(true);
-      setOrderNumber(orderId);
-      return;
-    }
+    // if (alreadyCreated === orderId) {
+    //   setOrderPlaced(true);
+    //   setOrderNumber(orderId);
+    //   return;
+    // }
 
     const createInvoice = async () => {
       try {
