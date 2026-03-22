@@ -123,6 +123,13 @@ def create_clover_checkout(request):
                 "lastName": last_name,
                 "email": email
             },
+            "address": {
+            "address1": "Default Address",
+            "city": "New York",
+            "state": "NY",
+            "zip": "10001",
+            "country": "US"
+        }
             "redirectUrls": {
                 "success": success_url,
                 "failure": failure_url
