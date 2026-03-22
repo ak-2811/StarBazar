@@ -418,7 +418,7 @@ const handleLogout = () => {
                   <div className="product-img-front">
                     <div className="product-img">
                       {p.image ? (
-                        <img src={`${import.meta.env.VITE_FRAPPE_URL}/${p.image}`} alt={p.item_code} />
+                        <img src={`${import.meta.env.VITE_FRAPPE_URL}${p.image}`} alt={p.item_code} />
                       ) : (
                         p.emoji
                       )}
@@ -554,7 +554,7 @@ const handleLogout = () => {
                   {liked[p.item_code] ? '❤' : '🤍'}
                 </button> */}
                 <div className="offer-badge">Special Deal</div>
-                <div className="offer-img">{p.image ? <img src={`${import.meta.env.VITE_FRAPPE_URL}/${p.image}`} alt={p.item_code} /> : p.emoji}</div>
+                <div className="offer-img">{p.image ? <img src={`${import.meta.env.VITE_FRAPPE_URL}${p.image}`} alt={p.item_code} /> : p.emoji}</div>
                 <div className="offer-body">
                   <div className="offer-name">{p.item_name}</div>
                   <div className="price-section">
@@ -595,7 +595,7 @@ const handleLogout = () => {
                   <div className="product-img-front">
                     <div className="product-img">
                       {p.image ? (
-                        <img src={`${import.meta.env.VITE_FRAPPE_URL}/${p.image}`} alt={p.item_code} />
+                        <img src={`${import.meta.env.VITE_FRAPPE_URL}${p.image}`} alt={p.item_code} />
                       ) : (
                         p.emoji
                       )}

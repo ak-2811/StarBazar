@@ -187,7 +187,7 @@ const cartItems = updatedCart.map(item => ({
   subtotal: item.subtotal,
   original_price: item.item.price,
   is_discounted: item.is_discounted,
-  image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `${import.meta.env.VITE_FRAPPE_URL}/${item.item.image}`) : null,
+  image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `${import.meta.env.VITE_FRAPPE_URL}${item.item.image}`) : null,
   item_code: item.item.item_code
 }));
 // Totals
@@ -404,7 +404,7 @@ useEffect(() => {
               name: item.item.item_name,
               original_price: item.item.price,
               amount: item.subtotal,
-              image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `${import.meta.env.VITE_FRAPPE_URL}/${item.item.image}`) : null,
+              image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `${import.meta.env.VITE_FRAPPE_URL}${item.item.image}`) : null,
             }));
 
             const reconstructedPayload = {
@@ -499,7 +499,7 @@ useEffect(() => {
         image: item.item.image
           ? (item.item.image.startsWith("http")
               ? item.item.image
-              : `${import.meta.env.VITE_FRAPPE_URL}/${item.item.image}`)
+              : `${import.meta.env.VITE_FRAPPE_URL}${item.item.image}`)
           : null,
       }));
 

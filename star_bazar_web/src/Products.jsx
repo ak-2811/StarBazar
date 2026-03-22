@@ -539,7 +539,7 @@ const handleLogout = () => {
               <div className="nutrition-modal-body">
                 <div className="modal-image-container">
                   <img
-                    src={`${import.meta.env.VITE_FRAPPE_URL}/${
+                    src={`${import.meta.env.VITE_FRAPPE_URL}${
                       showBack && selectedNutrition.back_image
                         ? selectedNutrition.back_image
                         : selectedNutrition.image
@@ -663,7 +663,7 @@ const handleLogout = () => {
                     <div className="product-img-front">
                       <div className="product-img">
                         {product.image ? (
-                          <img src={`${import.meta.env.VITE_FRAPPE_URL}/${product.image}`} alt={product.item_code} />
+                          <img src={`${import.meta.env.VITE_FRAPPE_URL}${product.image}`} alt={product.item_code} />
                         ) : (
                           product.emoji
                         )}

@@ -314,7 +314,7 @@ function toggleLike(code) {
                       <div className="product-img-front">
                         <div className="product-img">
                           {p.image ? (
-                            <img src={`${import.meta.env.VITE_FRAPPE_URL}/${p.image}`} alt={p.item_code} />
+                            <img src={`${import.meta.env.VITE_FRAPPE_URL}${p.image}`} alt={p.item_code} />
                           ) : (
                             p.emoji
                           )}
@@ -380,7 +380,7 @@ function toggleLike(code) {
                 <div className="nutrition-modal-body">
                   <div className="modal-image-container">
                     <img
-                      src={`${import.meta.env.VITE_FRAPPE_URL}/${
+                      src={`${import.meta.env.VITE_FRAPPE_URL}${
                         showBack && selectedNutrition.back_image
                           ? selectedNutrition.back_image
                           : selectedNutrition.image
