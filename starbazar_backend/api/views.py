@@ -117,28 +117,35 @@ def create_clover_checkout(request):
         success_url = "https://example.com/success"
         failure_url = "https://example.com/failure"
 
-        payload = {
-            "customer": {
-                "firstName": first_name,
-                "lastName": last_name,
-                "email": email
-            },
-            "address": {
-            "address1": "Default Address",
-            "city": "New York",
-            "state": "NY",
-            "zip": "10001",
-            "country": "US"
-        }
-            "redirectUrls": {
-                "success": success_url,
-                "failure": failure_url
-            },
-            "shoppingCart": {
-                "lineItems": line_items
-            },
-             "paymentSources": ["CARD"] 
-        }
+       payload = {
+                "customer": {
+                    "firstName": first_name,
+                    "lastName": last_name,
+                    "email": email,
+                    "phoneNumber": "9999999999",  # 🔥 important (don’t leave empty)
+
+                    # ✅ address MUST be inside customer
+                    "address": {
+                        "address1": "Default Address",
+                        "city": "New York",
+                        "state": "NY",
+                        "zip": "10001",
+                        "country": "US"
+                    }
+                },
+
+                "redirectUrls": {
+                    "success": success_url,
+                    "failure": failure_url
+                },
+
+                "shoppingCart": {
+                    "lineItems": line_items
+                },
+
+                # ✅ REQUIRED
+                "paymentSources": ["CARD"]
+            }
 
         headers = {
             "accept": "application/json",
