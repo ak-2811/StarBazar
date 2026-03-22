@@ -67,8 +67,8 @@ def start_clover_payment_view(request):
     except Exception as exc:
         return JsonResponse({"success": False, "error": f"Unexpected error: {str(exc)}"}, status=500)
 
-CLOVER_MERCHANT_ID = "JT3NAZ6NGHFY1"
-CLOVER_PRIVATE_TOKEN = "d2b09fbc-a676-9845-ac86-b7d96b8a5334"
+CLOVER_MERCHANT_ID = "BY609J523MA91"
+CLOVER_PRIVATE_TOKEN = "75c13f1c-aaa0-3c13-0b22-c9e938c29c3d"
 
 @csrf_exempt
 def create_clover_checkout(request):
@@ -155,8 +155,8 @@ def create_clover_checkout(request):
         }
 
         response = requests.post(
-            "https://apisandbox.dev.clover.com/invoicingcheckoutservice/v1/checkouts",
-            # "https://api.clover.com/invoicingcheckoutservice/v1/checkouts",
+            # "https://apisandbox.dev.clover.com/invoicingcheckoutservice/v1/checkouts",
+                "https://api.clover.com/invoicingcheckoutservice/v1/checkouts",
             headers=headers,
             json=payload,
             timeout=30
