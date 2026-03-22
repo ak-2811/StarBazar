@@ -290,7 +290,7 @@ export default function Orders() {
                         {order.items.map((item, idx) => (
                           <div key={idx} className="order-item-row">
                             <img
-                              src={item.image}
+                              src={item.image ? (item.image.startsWith('http') ? item.image : `${import.meta.env.VITE_FRAPPE_URL}${item.image}`) : '/placeholder.png'}
                               alt={item.name}
                               className="order-item-img"
                             />
