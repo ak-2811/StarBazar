@@ -114,8 +114,8 @@ def create_clover_checkout(request):
                 "unitQty": 1
             })
 
-        success_url = "https://example.com/success"
-        failure_url = "https://example.com/failure"
+        success_url = f"https://shop-star-bazar.com/checkout?payment=success&order_id={order_id}"
+        failure_url = f"https://shop-star-bazar.com/checkout?payment=failed&order_id={order_id}"
 
         payload = {
                 "customer": {

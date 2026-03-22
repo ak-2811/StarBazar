@@ -369,24 +369,55 @@ useEffect(() => {
   //     alert("Order failed");
   //   }
   // };
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const payment = params.get("payment");
-    const orderId = params.get("order_id");
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const payment = params.get("payment");
+  const orderId = params.get("order_id");
 
-    if (!payment) return;
+  if (!payment) return;
 
-    if (payment === "success") {
+  if (payment === "success") {
+
+    const alreadyCreated = localStorage.getItem("invoice_created");
+
+    if (alreadyCreated === orderId) {
       setOrderPlaced(true);
-      setOrderNumber(orderId || "");
-      localStorage.removeItem("cart");
+      setOrderNumber(orderId);
+      return;
     }
 
-    if (payment === "failed") {
-      alert("Transaction failed. Please try again.");
-    }
+    const createInvoice = async () => {
+      try {
+        const savedPayload = JSON.parse(localStorage.getItem("order_payload"));
 
-  }, []);
+        if (!savedPayload) return;
+
+        const res = await axios.post(
+          `${import.meta.env.VITE_DJANGO_URL}/create-sales-invoice/`,
+          savedPayload
+        );
+
+        setOrderPlaced(true);
+        setOrderNumber(orderId || res.data.invoice || "");
+
+        localStorage.setItem("invoice_created", orderId);
+
+        localStorage.removeItem("cart");
+        localStorage.removeItem("order_payload");
+
+      } catch (error) {
+        console.error("Invoice creation failed:", error);
+      }
+    };
+
+    createInvoice();
+  }
+
+  if (payment === "failed") {
+    alert("Transaction failed. Please try again.");
+  }
+
+}, []);
 
   const handleSubmitOrder = async (e) => {
     e.preventDefault();
@@ -429,6 +460,7 @@ useEffect(() => {
         subtotal,
         total,
       };
+      localStorage.setItem("order_payload", JSON.stringify(payload));
 
       const res = await axios.post(
         `${import.meta.env.VITE_DJANGO_URL}/create-clover-checkout/`,
