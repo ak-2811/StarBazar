@@ -536,6 +536,14 @@ useEffect(() => {
     }
   };
 
+  // Submit handler used by the fixed mobile action bar (calls main submit)
+  const handleSubmitOrderFromBar = (e) => {
+    // guard: prevent default behavior from click
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    // call the main submit handler; pass event along
+    handleSubmitOrder(e);
+  };
+
   const handleContinueShopping = () => {
     setOrderPlaced(false);
     setFormData({
@@ -964,6 +972,19 @@ useEffect(() => {
           </div>
         )}
       </main>
+
+      {/* Mobile fixed action bar: visible on small screens so Place Order is not hidden */}
+      {cart.length > 0 && (
+        <div className="mobile-action-bar" role="region" aria-label="Checkout actions">
+          <div className="mobile-total">
+            <div className="label">Total</div>
+            <div className="amount">{formatCurrency(total)}</div>
+          </div>
+          <button className="place-btn" onClick={handleSubmitOrderFromBar} aria-label="Place Order">
+            Place Order
+          </button>
+        </div>
+      )}
 
       <footer className="checkout-footer">
         <div className="footer-content">
