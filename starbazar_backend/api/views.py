@@ -16,6 +16,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 from django.views.decorators.http import require_POST
+from urllib.parse import urlparse
 
 
 
@@ -482,12 +483,16 @@ def create_sales_invoice(request):
         status="PREPARING"
     )
 
+
     for i in items:
+        image_url = i.get("image") or ""
+        if image_url and "erp.shop-star-bazar.com" in image_url:
+            image_url = urlparse(image_url).path
         OrderItem.objects.create(
         order=order,
         item_code=i["item_code"],
         name=i.get("name"),
-        image=i.get("image"),
+        image=image_url,
         price=i["original_price"],
         qty=i["qty"]
     )
