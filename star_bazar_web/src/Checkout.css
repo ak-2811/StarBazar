@@ -1519,6 +1519,15 @@
     padding: 1.5rem;
   }
 
+  /* Hide footer on mobile to avoid stacking/overlap issues with fixed action bar */
+  .checkout-footer {
+    display: none !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+  }
+
   .checkout-form-section {
     padding: 1.2rem;
   }
