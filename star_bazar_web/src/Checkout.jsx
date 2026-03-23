@@ -963,8 +963,7 @@ useEffect(() => {
                 </div>
 
                 <div className="shipping-info">
-                  <p>📦 Free shipping on orders over $50</p>
-                  <p>🔒 Secure checkout with SSL encryption</p>
+                  <p>🔒 Secure checkout with Clover</p>
                   <p>✓ 100% satisfaction guaranteed</p>
                 </div>
               </div>
@@ -976,13 +975,15 @@ useEffect(() => {
       {/* Mobile fixed action bar: visible on small screens so Place Order is not hidden */}
       {cart.length > 0 && (
         <div className="mobile-action-bar" role="region" aria-label="Checkout actions">
-          <div className="mobile-total">
-            <div className="label">Total</div>
-            <div className="amount">{formatCurrency(total)}</div>
+          <div className="mobile-action-inner">
+            <div className="mobile-total">
+              <div className="label">Total</div>
+              <div className="amount">{formatCurrency(total)}</div>
+            </div>
+            <button className="place-btn" onClick={handleSubmitOrderFromBar} aria-label="Place Order">
+              Place Order
+            </button>
           </div>
-          <button className="place-btn" onClick={handleSubmitOrderFromBar} aria-label="Place Order">
-            Place Order
-          </button>
         </div>
       )}
 
