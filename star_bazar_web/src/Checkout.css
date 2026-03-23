@@ -1544,6 +1544,40 @@
     height: 200px;
   }
 
+  /* Make cart rows fit the viewport better on mobile */
+  .cart-item-right {
+    align-items: center;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .cart-item-right .item-image-container {
+    width: 80px;
+    height: 80px;
+    min-width: 80px;
+    min-height: 80px;
+  }
+
+  /* Ensure middle content can shrink and text truncates instead of causing overflow */
+  .item-middle-section {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  /* Push price/actions to the far right and keep them visible */
+  .item-right-actions {
+    margin-left: auto;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .item-price-right {
+    min-width: 60px;
+    font-size: 1rem;
+  }
+
   .checkout-form-section {
     padding: 1.2rem;
   }
