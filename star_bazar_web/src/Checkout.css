@@ -1517,6 +1517,7 @@
 
   .checkout-container {
     padding: 1.5rem;
+    padding-bottom: 120px;
   }
 
   /* Hide footer on mobile to avoid stacking/overlap issues with fixed action bar */
@@ -1537,18 +1538,86 @@
   .checkout-form-section.left-form {
     position: static !important;
     top: auto !important;
+    margin-bottom: 2rem;
+    padding: 1.2rem !important;
   }
 
-  /* Make map a bit shorter on mobile so it's clearly visible without needing to scroll too far */
+  /* Make form sections more compact */
+  .form-section {
+    margin-bottom: 1.2rem;
+    padding-bottom: 1rem;
+  }
+
+  .form-group {
+    margin-bottom: 0.9rem;
+  }
+
+  .form-group label {
+    font-size: 0.8rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .form-group input {
+    padding: 0.65rem 0.8rem;
+    font-size: 16px;
+    border-radius: 6px;
+  }
+
+  .form-row {
+    gap: 0.8rem;
+    margin-bottom: 0.9rem;
+  }
+
+  /* Improve map visibility on mobile */
   .map-container {
-    height: 200px;
+    height: 250px;
+    margin: 1.2rem 0;
+    border-radius: 8px;
+  }
+
+  /* Improve store pickup info card */
+  .store-pickup-info {
+    padding: 1.2rem;
+    margin: 1.2rem 0;
+  }
+
+  .store-pickup-info h4 {
+    font-size: 1rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .pickup-icon {
+    font-size: 2rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .store-address {
+    padding: 1rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .store-address p {
+    font-size: 0.9rem;
+    margin: 0.3rem 0;
+  }
+
+  /* Improve order summary display */
+  .order-summary {
+    padding: 1.2rem;
+    margin-bottom: 0;
+  }
+
+  .order-summary h3 {
+    font-size: 1.3rem;
+    margin-bottom: 1.2rem;
   }
 
   /* Make cart rows fit the viewport better on mobile */
   .cart-item-right {
     align-items: center;
-    padding: 1rem;
-    gap: 1rem;
+    padding: 0.9rem;
+    gap: 0.8rem;
+    flex-wrap: wrap;
   }
 
   .cart-item-right .item-image-container {
@@ -1562,6 +1631,7 @@
   .item-middle-section {
     min-width: 0;
     flex: 1 1 auto;
+    gap: 0.5rem;
   }
 
   /* Push price/actions to the far right and keep them visible */
@@ -1570,33 +1640,119 @@
     flex-shrink: 0;
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.5rem;
   }
 
   .item-price-right {
-    min-width: 60px;
-    font-size: 1rem;
-  }
-
-  .checkout-form-section {
-    padding: 1.2rem;
+    min-width: 55px;
+    font-size: 0.95rem;
   }
 
   .checkout-form-section h2 {
-    font-size: 1.3rem;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
   }
 
   .checkout-form-section h3 {
-    font-size: 1.05rem;
-  }
-
-  .form-group input {
-    padding: 0.8rem 0.8rem;
-    font-size: 16px;
+    font-size: 1rem;
+    margin-bottom: 0.8rem;
   }
 
   .cart-items {
-    max-height: 300px;
+    max-height: 350px;
+  }
+
+  /* Improve summary details visibility */
+  .summary-details {
+    padding: 1.2rem 0;
+    margin-bottom: 1.2rem;
+  }
+
+  .summary-row {
+    margin-bottom: 0.8rem;
+    font-size: 0.9rem;
+  }
+
+  .summary-row.total {
+    padding-top: 0.8rem;
+    margin-top: 0.8rem;
+  }
+
+  .summary-row.total strong {
+    font-size: 1.2rem;
+  }
+
+  /* Improve shipping info */
+  .shipping-info {
+    padding: 1rem;
+    margin-bottom: 1.2rem;
+    font-size: 0.85rem;
+  }
+
+  .shipping-info p {
+    margin: 0.4rem 0;
+  }
+
+  /* Button submit */
+  .btn-submit {
+    padding: 0.85rem;
+    font-size: 0.95rem;
+    margin-top: 1rem;
+    display: block;
+  }
+
+  /* Delivery options */
+  .delivery-option {
+    padding: 1rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .delivery-option input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    margin-right: 0.8rem;
+  }
+
+  .delivery-text strong {
+    font-size: 0.95rem;
+  }
+
+  .delivery-text small {
+    font-size: 0.8rem;
+  }
+
+  /* Payment options */
+  .payment-option {
+    padding: 1rem;
+  }
+
+  .payment-option input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    margin-right: 0.8rem;
+  }
+
+  /* COD info */
+  .cod-info {
+    padding: 1.2rem;
+    margin: 1.2rem 0;
+  }
+
+  .cod-icon {
+    font-size: 2rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .cod-info p {
+    font-size: 0.9rem;
+    margin: 0.3rem 0;
+  }
+
+  /* View maps button */
+  .btn-view-maps {
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    margin: 0.8rem 0;
   }
 
   .cart-items-header {
@@ -1724,42 +1880,76 @@
 
   .checkout-container {
     padding: 1rem;
+    padding-bottom: 140px;
   }
 
   .checkout-form-section {
-    padding: 1rem;
+    padding: 0.9rem;
+    margin-bottom: 1.5rem;
   }
 
   .checkout-form-section h2 {
-    font-size: 1.1rem;
+    font-size: 1rem;
+    margin-bottom: 0.8rem;
   }
 
   .checkout-form-section h3 {
-    font-size: 1rem;
+    font-size: 0.95rem;
+    margin-bottom: 0.7rem;
+  }
+
+  .form-group {
+    margin-bottom: 0.8rem;
+  }
+
+  .form-group label {
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem;
   }
 
   .form-group input {
-    padding: 0.7rem;
+    padding: 0.6rem;
+    font-size: 16px;
+  }
+
+  .form-row {
+    gap: 0.6rem;
+    margin-bottom: 0.8rem;
   }
 
   .btn-submit {
-    padding: 0.8rem;
-    font-size: 1rem;
-  }
-
-  /* Hide the inline submit button on very small screens; we'll surface a fixed bar */
-  .btn-submit {
-    display: none;
+    padding: 0.75rem;
+    font-size: 0.9rem;
+    margin-top: 0.8rem;
+    display: block;
   }
 
   .order-summary {
-    padding: 1rem;
+    padding: 0.9rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .order-summary h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
   }
 
   .cart-item {
     grid-template-columns: auto 1fr;
     gap: 0.3rem;
     padding: 0.5rem;
+  }
+
+  .cart-item-right {
+    padding: 0.8rem;
+    gap: 0.6rem;
+  }
+
+  .cart-item-right .item-image-container {
+    width: 70px;
+    height: 70px;
+    min-width: 70px;
+    min-height: 70px;
   }
 
   .item-emoji {
@@ -1770,32 +1960,73 @@
     grid-column: 2;
   }
 
+  .item-name {
+    font-size: 0.85rem;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .item-unit {
+    font-size: 0.75rem;
+  }
+
+  .item-price-right {
+    font-size: 0.9rem;
+    min-width: 50px;
+  }
+
   .item-qty,
   .item-price,
   .item-remove {
     grid-column: 2;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
   }
 
   .shipping-info {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+    padding: 0.8rem;
   }
 
   .shipping-info p {
-    margin: 0.3rem 0;
+    margin: 0.25rem 0;
+  }
+
+  .map-container {
+    height: 200px;
+    margin: 1rem 0;
+  }
+
+  .store-pickup-info {
+    padding: 1rem;
+    margin: 1rem 0;
+  }
+
+  .store-address {
+    padding: 0.8rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .delivery-option,
+  .payment-option {
+    padding: 0.8rem;
+  }
+
+  .summary-row {
+    font-size: 0.85rem;
+    margin-bottom: 0.6rem;
   }
 
   .footer-content {
-    padding: 2rem 1rem;
-    font-size: 0.8rem;
+    padding: 1.5rem 1rem;
+    font-size: 0.75rem;
   }
 
   .company-info h4 {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
 
   .company-info p {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
   }
 }
 
