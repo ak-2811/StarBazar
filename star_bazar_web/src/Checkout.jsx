@@ -965,6 +965,7 @@ useEffect(() => {
                 <div className="shipping-info">
                   <p>🔒 Secure checkout with Clover</p>
                   <p>✓ 100% satisfaction guaranteed</p>
+                  <p>No Exchange or Returns on Vegetables and Frozen Fruits</p>
                 </div>
               </div>
             </aside>
