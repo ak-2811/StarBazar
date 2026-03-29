@@ -6,6 +6,7 @@ import Wishlist from './Wishlist'
 import Login from './Login'
 import Signup from './Signup'
 import Orders from './Orders'
+import PrivacyPolicy from './PrivacyPolicy'       
 // import { useEffect } from "react";
 // import { testConnection } from "./services/api";
 
@@ -19,6 +20,7 @@ function App() {
       <Route path='/checkout' element={<Checkout />} />
       <Route path='/wishlist' element={<Wishlist />} />
       <Route path='/orders' element={<Orders />} />
+      <Route path='/privacy-policy' element={<PrivacyPolicy />} />
     </Routes>
   )
 
