@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 load_dotenv()
 from django.views.decorators.http import require_POST
 from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote, quote
 
 
 
@@ -655,7 +656,7 @@ def all_products(request):
     page = int(request.GET.get("page", 1))
     page_size = 12
 
-    category = request.GET.get("category")
+    category = unquote(request.GET.get("category", "all"))
     search = request.GET.get("search")
     availability = request.GET.get("availability")
     min_price = request.GET.get("min_price")
@@ -686,7 +687,7 @@ def all_products(request):
         f'fields=["name","item_name","item_code","image","stock_uom","item_group","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
         f"&limit_page_length=40"
         f"&limit_start={((page - 1) * page_size)}"
-        f"&filters={json.dumps(filters)}"
+        f"&filters={quote(json.dumps(filters, separators=(',', ':')))}"
     )
 
     items_response = requests.get(items_url, headers=HEADERS).json()
