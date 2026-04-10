@@ -10,6 +10,15 @@ class SignupSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'email', 'password', 'full_name']  # removed username
 
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("User already exists")
+        return value
+    def validate_password(self, value):
+        if len(value) < 5:
+            raise serializers.ValidationError("Password must be at least 5 characters long")
+        return value
+
     def create(self, validated_data):
         full_name = validated_data.pop('full_name')
 

@@ -35,6 +35,10 @@ function Signup() {
       setError('Passwords do not match')
       return
     }
+    if (formData.password.length < 5) {
+      setError('Password must be at least 5 characters long')
+      return
+    }
 
     if (!formData.agreeTerms) {
       setError('Please agree to the Terms of Service')
@@ -61,11 +65,19 @@ function Signup() {
       if (response.ok) {
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify({ email: data.email }))
-        // Store username for display in header
         localStorage.setItem('username', formData.fullName)
         navigate('/login')
       } else {
-        setError(data.detail || 'Signup failed')
+        // ✅ Extract proper error message
+        if (data.email) {
+          setError(data.email[0])
+        } else if (data.non_field_errors) {
+          setError(data.non_field_errors[0])
+        } else if (data.detail) {
+          setError(data.detail)
+        } else {
+          setError('Signup failed')
+        }
       }
 
     } catch (err) {
