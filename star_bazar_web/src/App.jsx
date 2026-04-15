@@ -8,6 +8,7 @@ import Signup from './Signup'
 import Orders from './Orders'
 import PrivacyPolicy from './PrivacyPolicy'     
 import DeleteRequest from './DeleteRequest'  
+import EndUserAgreement from './EndUserAgreement'
 // import { useEffect } from "react";
 // import { testConnection } from "./services/api";
 
@@ -21,6 +22,7 @@ function App() {
       <Route path='/checkout' element={<Checkout />} />
       <Route path='/wishlist' element={<Wishlist />} />
       <Route path='/orders' element={<Orders />} />
+      <Route path='/end-user-agreement' element={<EndUserAgreement />} />
       <Route path='/privacy-policy' element={<PrivacyPolicy />} />
       <Route path='/delete-request' element={<DeleteRequest />} />
     </Routes>
