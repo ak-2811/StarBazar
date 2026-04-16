@@ -681,12 +681,49 @@ def all_products(request):
     if search:
         filters.append(["item_name", "like", f"%{search}%"])
 
-    # 1️⃣ Fetch only 40 items directly
+    # 1️⃣ Calculate pagination offset
+    limit_start = (page - 1) * page_size
+    
+    # 2️⃣ Get total count - fetch with a small limit to get metadata with count
+    # Frappe returns pagination metadata that should include the total
+    count_url = (
+        f"{FRAPPE_URL}/api/resource/Item?"
+        f'fields=["name"]'
+        f"&limit_page_length=500"  # Frappe limit - any value returns same meta with count
+        f"&filters={quote(json.dumps(filters, separators=(',', ':')))}"
+    )
+    total_count = 0
+    try:
+        count_response = requests.get(count_url, headers=HEADERS).json()
+        count_data = count_response.get("data", [])
+        count_meta = count_response.get("meta", {})
+        
+        # If we got data, at least use that as a minimum
+        total_count = len(count_data)
+        
+        # But try to get the actual total from Frappe's meta if available
+        if "total_count" in count_meta:
+            total_count = count_meta["total_count"]
+        elif count_meta:
+            # Sometimes Frappe includes count differently in meta
+            # Check for common variations
+            for key in ["totalCount", "count", "total"]:
+                if key in count_meta:
+                    total_count = count_meta[key]
+                    break
+    except Exception as e:
+        total_count = 0
+        import sys
+        print(f"DEBUG: Error fetching count: {e}", file=sys.stderr)
+    
+    # 3️⃣ Fetch paginated items with larger batch to account for filtering
+    # Fetch 2x page_size to ensure we have enough after availability/price filtering
+    fetch_limit = page_size * 2
     items_url = (
         f"{FRAPPE_URL}/api/resource/Item?"
         f'fields=["name","item_name","item_code","image","stock_uom","item_group","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
-        f"&limit_page_length=40"
-        f"&limit_start={((page - 1) * page_size)}"
+        f"&limit_page_length={fetch_limit}"
+        f"&limit_start={limit_start}"
         f"&filters={quote(json.dumps(filters, separators=(',', ':')))}"
     )
 
@@ -694,7 +731,7 @@ def all_products(request):
     items_data = items_response.get("data", [])
 
     if not items_data:
-        return Response({"products": [], "total_count": 0})
+        return Response({"products": [], "total_count": total_count, "page": page, "page_size": page_size})
 
     item_codes = [item["item_code"] for item in items_data]
     item_codes_json = json.dumps(item_codes)
@@ -765,7 +802,7 @@ def all_products(request):
         sold = pending_map.get(code, 0)
         stock_map[code] = max(base - sold, 0)
 
-    # 4️⃣ Apply filters
+    # 4️⃣ Apply filters (availability and price) to current batch
     if availability == "in-stock":
         items_data = [i for i in items_data if stock_map.get(i["item_code"], 0) > 0]
     elif availability == "out-of-stock":
@@ -784,13 +821,8 @@ def all_products(request):
     elif sort_by == "high_to_low":
         items_data = sorted(items_data, key=lambda i: float(price_map.get(i["item_code"], 0) or 0), reverse=True)
 
-    total_count = len(items_data)
-
-    # 6️⃣ Pagination
-    start = (page - 1) * page_size
-    items_page = items_data[start:start + page_size]
-
-    # 7️⃣ Build response
+    # 6️⃣ Take only page_size items from the filtered batch
+    items_page = items_data[:page_size]
     final_data = []
     for item in items_page:
         item_code = item["item_code"]
