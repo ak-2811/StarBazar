@@ -659,19 +659,7 @@ def all_products(request):
     category = unquote(request.GET.get("category", "all"))
     search = request.GET.get("search")
     availability = request.GET.get("availability")
-    min_price = request.GET.get("min_price")
-    max_price = request.GET.get("max_price")
     sort_by = request.GET.get("sort_by")
-
-    try:
-        min_price = float(min_price) if min_price not in [None, ""] else None
-    except:
-        min_price = None
-
-    try:
-        max_price = float(max_price) if max_price not in [None, ""] else None
-    except:
-        max_price = None
 
     filters = [["item_group", "!=", "Scheme"]]
 
@@ -802,18 +790,11 @@ def all_products(request):
         sold = pending_map.get(code, 0)
         stock_map[code] = max(base - sold, 0)
 
-    # 4️⃣ Apply filters (availability and price) to current batch
+    # 4️⃣ Apply filters (availability only) to current batch
     if availability == "in-stock":
         items_data = [i for i in items_data if stock_map.get(i["item_code"], 0) > 0]
     elif availability == "out-of-stock":
         items_data = [i for i in items_data if stock_map.get(i["item_code"], 0) <= 0]
-
-    if min_price is not None or max_price is not None:
-        items_data = [
-            i for i in items_data
-            if (min_price is None or float(price_map.get(i["item_code"], 0)) >= min_price) and
-               (max_price is None or float(price_map.get(i["item_code"], 0)) <= max_price)
-        ]
 
     # 5️⃣ Apply sorting
     if sort_by == "low_to_high":
