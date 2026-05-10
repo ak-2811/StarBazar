@@ -265,6 +265,19 @@ def user_profile(request):
     })
 
 
+@api_view(['DELETE', 'POST'])
+@permission_classes([IsAuthenticated])
+def delete_account(request):
+    user = request.user
+    user_email = user.email
+    user.delete()
+
+    return Response({
+        "message": "Account deleted successfully",
+        "email": user_email
+    })
+
+
 FRAPPE_URL = os.environ.get("FRAPPE_URL", "http://localhost:8000")
 API_KEY = os.environ.get("FRAPPE_API_KEY", "")
 API_SECRET = os.environ.get("FRAPPE_API_SECRET", "")
@@ -1468,5 +1481,4 @@ def pricing_offers(request):
         })
 
     return Response(final_data)
-
 
