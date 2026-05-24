@@ -205,6 +205,12 @@ const goToCheckout = () => {
   // 
   
   function increaseQty(product) {
+  if (!localStorage.getItem("token")) {
+    alert("Please login before adding products to your cart.")
+    navigate("/login")
+    return
+  }
+
   const key = product.item_code
 
   setCart(prev => {

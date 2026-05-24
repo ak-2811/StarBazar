@@ -284,6 +284,12 @@ async function toggleLike(item_code) {
 }
 
 function increaseQty(p) {
+  if (!localStorage.getItem("token")) {
+    alert("Please login before adding products to your cart.")
+    navigate("/login")
+    return
+  }
+
   const key = p.item_code
   // console.log("Current Product Code:", p.item_code)
   setCart(prev => ({
