@@ -31,3 +31,17 @@ class OrderItem(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     qty = models.IntegerField()
     image = models.TextField(null=True, blank=True)
+
+
+class PendingCloverOrder(models.Model):
+    order_id = models.CharField(max_length=100, unique=True)
+    payload = models.JSONField()
+    clover_checkout_id = models.CharField(max_length=255, blank=True, null=True)
+    clover_checkout_url = models.TextField(blank=True, null=True)
+    payment_status = models.CharField(max_length=30, default="PENDING")
+    invoice = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.order_id} - {self.payment_status}"

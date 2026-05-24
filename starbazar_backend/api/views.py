@@ -9,8 +9,9 @@ from .serializers import SignupSerializer, LoginSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import permission_classes
 from django.contrib.auth.models import User
-from .models import Wishlist,Order,OrderItem
+from .models import Wishlist, Order, OrderItem, PendingCloverOrder
 from django.http import JsonResponse
+from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
 import os
 from dotenv import load_dotenv
@@ -69,8 +70,10 @@ def start_clover_payment_view(request):
     except Exception as exc:
         return JsonResponse({"success": False, "error": f"Unexpected error: {str(exc)}"}, status=500)
 
-CLOVER_MERCHANT_ID = "HDBW3HKHZBNF1"
-CLOVER_PRIVATE_TOKEN = "9fecaf02-9320-2b85-ec62-d48341336810"
+CLOVER_MERCHANT_ID = os.environ.get("CLOVER_MERCHANT_ID", "HDBW3HKHZBNF1")
+CLOVER_PRIVATE_TOKEN = os.environ.get("CLOVER_PRIVATE_TOKEN", "")
+CLOVER_SUCCESS_REDIRECT = os.environ.get("CLOVER_SUCCESS_REDIRECT", "https://shop-star-bazar.com/checkout")
+CLOVER_FAILURE_REDIRECT = os.environ.get("CLOVER_FAILURE_REDIRECT", "https://shop-star-bazar.com/checkout")
 
 @csrf_exempt
 def create_clover_checkout(request):
@@ -122,8 +125,8 @@ def create_clover_checkout(request):
                 "unitQty": 1
             })
 
-        success_url = f"https://shop-star-bazar.com/checkout?payment=success&order_id={order_id}"
-        failure_url = f"https://shop-star-bazar.com/checkout?payment=failed&order_id={order_id}"
+        success_url = f"https://api.shop-star-bazar.com/api/clover-payment-success/?order_id={order_id}"
+        failure_url = f"{CLOVER_FAILURE_REDIRECT}?payment=failed&order_id={order_id}"
 
         payload = {
                 "customer": {
@@ -182,10 +185,15 @@ def create_clover_checkout(request):
 
         clover_data = response.json()
 
-        # 2. Save Clover session details on your order here
-        # order.clover_checkout_url = clover_data.get("href")
-        # order.clover_checkout_id = clover_data.get("id")
-        # order.save()
+        PendingCloverOrder.objects.update_or_create(
+            order_id=order_id,
+            defaults={
+                "payload": data,
+                "clover_checkout_id": clover_data.get("id"),
+                "clover_checkout_url": clover_data.get("href"),
+                "payment_status": "PENDING",
+            }
+        )
 
         return JsonResponse({
             "order_id": order_id,
@@ -309,13 +317,16 @@ def frappe_get_invoice_by_order(order_id):
     data = r.get("data", [])
     return data[0]["name"] if data else None
 
-# Creating Sales Invoice from the order.
-@api_view(['POST'])
-def create_sales_invoice(request):
+def create_invoice_from_payload(data):
+    items = data.get("items", [])
+    customer_name = data.get("customer_name", "Online Order")
+    order_id = data.get("order_id")
 
-    items = request.data.get("items", [])
-    # customer_name = "Online Order"
-    customer_name = request.data.get("customer_name", "Online Order")
+    if not order_id:
+        raise ValueError("order_id is required")
+
+    if not items:
+        raise ValueError("No items provided")
 
     # -----------------------------------
     # CHECK / CREATE CUSTOMER IN FRAPPE
@@ -346,11 +357,8 @@ def create_sales_invoice(request):
             json=customer_payload
         )
 
-    if not items:
-        return Response({"error": "No items provided"}, status=400)
-
     invoice_items = []
-    tax = float(request.data.get("tax", 0))
+    tax = float(data.get("tax", 0))
     total_amount = tax
 
     for i in items:
@@ -390,12 +398,13 @@ def create_sales_invoice(request):
             })
 
         total_amount += amount
-    
-    order_id = request.data.get("order_id")
 
     existing_invoice = frappe_get_invoice_by_order(order_id)
     if existing_invoice:
-        return Response({"invoice": existing_invoice})
+        return {
+            "message": "Invoice already exists",
+            "invoice": existing_invoice
+        }
 
     payload = {
         "doctype": "Sales Invoice",
@@ -435,13 +444,13 @@ def create_sales_invoice(request):
     # print("ERP STATUS:", response.status_code)
     # print("ERP RESPONSE:", response.text)
 
-    data = response.json()
-    # print("ERP DATA:", data)
+    frappe_data = response.json()
+    # print("ERP DATA:", frappe_data)
 
-    if "data" not in data:
-        return Response(data, status=400)
+    if "data" not in frappe_data:
+        raise ValueError(json.dumps(frappe_data))
     
-    invoice_name = data["data"]["name"]
+    invoice_name = frappe_data["data"]["name"]
        
     # submit invoice
     submit_url = f"{FRAPPE_URL}/api/resource/Sales Invoice/{invoice_name}"
@@ -486,7 +495,7 @@ def create_sales_invoice(request):
     # SAVE ORDER IN DJANGO DATABASE
     # -----------------------------
 
-    email = request.data.get("email")
+    email = data.get("email")
 
     user = None
     if email:
@@ -495,16 +504,21 @@ def create_sales_invoice(request):
         except User.DoesNotExist:
             pass
 
-    order = Order.objects.create(
+    order, _ = Order.objects.get_or_create(
         order_id=order_id,
-        user=user,
-        email=email,
-        total=total_amount,
-        status="PREPARING"
+        defaults={
+            "user": user,
+            "email": email or "",
+            "total": total_amount,
+            "status": "PREPARING"
+        }
     )
 
 
     for i in items:
+        if order.items.filter(item_code=i["item_code"]).exists():
+            continue
+
         image_url = i.get("image") or ""
         if image_url and "erp.shop-star-bazar.com" in image_url:
             image_url = urlparse(image_url).path
@@ -517,10 +531,55 @@ def create_sales_invoice(request):
         qty=i["qty"]
     )
 
-    return Response({
+    return {
         "message": "Invoice created",
         "invoice": invoice_name
-    })
+    }
+
+
+# Creating Sales Invoice from the order.
+@api_view(['POST'])
+def create_sales_invoice(request):
+    try:
+        result = create_invoice_from_payload(request.data)
+        return Response(result)
+    except ValueError as exc:
+        return Response({"error": str(exc)}, status=400)
+
+
+@csrf_exempt
+def clover_payment_success(request):
+    order_id = request.GET.get("order_id")
+
+    if not order_id:
+        return JsonResponse({"error": "order_id required"}, status=400)
+
+    pending = PendingCloverOrder.objects.filter(order_id=order_id).first()
+
+    if not pending:
+        return JsonResponse({"error": "Pending order not found"}, status=404)
+
+    if pending.payment_status == "PAID":
+        redirect_url = f"{CLOVER_SUCCESS_REDIRECT}?payment=success&order_id={order_id}"
+        if pending.invoice:
+            redirect_url += f"&invoice={pending.invoice}"
+        return redirect(redirect_url)
+
+    try:
+        result = create_invoice_from_payload(pending.payload)
+    except ValueError as exc:
+        pending.payment_status = "FAILED"
+        pending.save(update_fields=["payment_status", "updated_at"])
+        return JsonResponse({"error": str(exc)}, status=400)
+
+    pending.payment_status = "PAID"
+    pending.invoice = result.get("invoice")
+    pending.save(update_fields=["payment_status", "invoice", "updated_at"])
+
+    redirect_url = f"{CLOVER_SUCCESS_REDIRECT}?payment=success&order_id={order_id}"
+    if pending.invoice:
+        redirect_url += f"&invoice={pending.invoice}"
+    return redirect(redirect_url)
 
 # Creating Local Django invoice 
 @api_view(['GET'])
@@ -1487,4 +1546,3 @@ def pricing_offers(request):
         })
 
     return Response(final_data)
-
