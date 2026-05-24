@@ -85,11 +85,11 @@ def create_clover_checkout(request):
         last_name = data.get("last_name", "").strip()
         email = data.get("email", "").strip()
 
-        if not email or not first_name or not last_name:
-            return JsonResponse(
-                {"error": "Please login to place an order."},
-                status=401
-            )
+        # if not email or not first_name or not last_name:
+        #     return JsonResponse(
+        #         {"error": "Please login to place an order."},
+        #         status=401
+        #     )
         items = data.get("items", [])
         tax = float(data.get("tax", 0))
         total = float(data.get("total", 0))
