@@ -70,8 +70,8 @@ def start_clover_payment_view(request):
     except Exception as exc:
         return JsonResponse({"success": False, "error": f"Unexpected error: {str(exc)}"}, status=500)
 
-CLOVER_MERCHANT_ID = os.environ.get("CLOVER_MERCHANT_ID", "HDBW3HKHZBNF1")
-CLOVER_PRIVATE_TOKEN = os.environ.get("CLOVER_PRIVATE_TOKEN", "")
+CLOVER_MERCHANT_ID = "HDBW3HKHZBNF1"
+CLOVER_PRIVATE_TOKEN = "9fecaf02-9320-2b85-ec62-d48341336810"
 CLOVER_SUCCESS_REDIRECT = os.environ.get("CLOVER_SUCCESS_REDIRECT", "https://shop-star-bazar.com/checkout")
 CLOVER_FAILURE_REDIRECT = os.environ.get("CLOVER_FAILURE_REDIRECT", "https://shop-star-bazar.com/checkout")
 
