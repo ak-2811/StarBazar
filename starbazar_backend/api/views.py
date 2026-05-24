@@ -317,6 +317,20 @@ def frappe_get_invoice_by_order(order_id):
     data = r.get("data", [])
     return data[0]["name"] if data else None
 
+
+def frappe_get_online_order_by_order(order_id):
+    url = f"{FRAPPE_URL}/api/resource/Online Order"
+
+    params = {
+        "filters": f'[["Online Order","order_id","=","{order_id}"]]',
+        "fields": '["name"]'
+    }
+
+    r = requests.get(url, headers=HEADERS, params=params).json()
+
+    data = r.get("data", [])
+    return data[0]["name"] if data else None
+
 def create_invoice_from_payload(data):
     items = data.get("items", [])
     customer_name = data.get("customer_name", "Online Order")
@@ -400,66 +414,59 @@ def create_invoice_from_payload(data):
         total_amount += amount
 
     existing_invoice = frappe_get_invoice_by_order(order_id)
+
     if existing_invoice:
-        return {
-            "message": "Invoice already exists",
-            "invoice": existing_invoice
+        invoice_name = existing_invoice
+    else:
+        payload = {
+            "doctype": "Sales Invoice",
+            "customer": customer_name,
+            "company": "Star Bazar",
+
+            "currency": "USD",
+            "selling_price_list": "Standard Selling",
+            "price_list_currency": "USD",
+            "plc_conversion_rate": 1,
+            "conversion_rate": 1,
+
+            "is_pos": 1,
+            "update_stock": 1,
+            "ignore_pricing_rule": 1,
+            "custom_order_id": order_id,
+
+            "items": invoice_items,
+
+            "payments": [
+                {
+                    "mode_of_payment": "Credit Card",
+                    "amount": total_amount
+                }
+            ]
         }
 
-    payload = {
-        "doctype": "Sales Invoice",
-        "customer": customer_name,
-        "company": "Star Bazar",
+        url = f"{FRAPPE_URL}/api/resource/Sales Invoice"
 
-        "currency": "USD",
-        "selling_price_list": "Standard Selling",
-        "price_list_currency": "USD",
-        "plc_conversion_rate": 1,
-        "conversion_rate": 1, 
+        response = requests.post(
+            url,
+            headers=HEADERS,
+            json=payload
+        )
 
-        "is_pos": 1,
-        "update_stock": 1,
-        "ignore_pricing_rule": 1,
-        "custom_order_id": order_id,
+        frappe_data = response.json()
 
-        "items": invoice_items,
+        if "data" not in frappe_data:
+            raise ValueError(json.dumps(frappe_data))
 
-        "payments": [
-            {
-                "mode_of_payment": "Credit Card",
-                "amount": total_amount
-            }
-        ]
-    }
+        invoice_name = frappe_data["data"]["name"]
 
-    url = f"{FRAPPE_URL}/api/resource/Sales Invoice"
-    # print("PAYLOAD SENT:", payload)
-    # print("URL:", url)
+        # submit invoice
+        submit_url = f"{FRAPPE_URL}/api/resource/Sales Invoice/{invoice_name}"
 
-    response = requests.post(
-        url,
-        headers=HEADERS,
-        json=payload
-    )
-    # print("ERP STATUS:", response.status_code)
-    # print("ERP RESPONSE:", response.text)
-
-    frappe_data = response.json()
-    # print("ERP DATA:", frappe_data)
-
-    if "data" not in frappe_data:
-        raise ValueError(json.dumps(frappe_data))
-    
-    invoice_name = frappe_data["data"]["name"]
-       
-    # submit invoice
-    submit_url = f"{FRAPPE_URL}/api/resource/Sales Invoice/{invoice_name}"
-
-    submit_response = requests.put(
-        submit_url,
-        headers=HEADERS,
-        json={"docstatus": 1}
-    )
+        requests.put(
+            submit_url,
+            headers=HEADERS,
+            json={"docstatus": 1}
+        )
 
      # Creating the entrt in the Online Order Doctype
     online_order_payload = {
@@ -481,15 +488,17 @@ def create_invoice_from_payload(data):
             "price": i["original_price"]
         })
 
-    online_order_url = f"{FRAPPE_URL}/api/resource/Online Order"
+    existing_online_order = frappe_get_online_order_by_order(order_id)
+    if not existing_online_order:
+        online_order_url = f"{FRAPPE_URL}/api/resource/Online Order"
 
-    online_response=requests.post(
-        online_order_url,
-        headers=HEADERS,
-        json=online_order_payload
-    )
-    print("ONLINE ORDER STATUS:", online_response.status_code)
-    print("ONLINE ORDER RESPONSE:", online_response.text)
+        online_response=requests.post(
+            online_order_url,
+            headers=HEADERS,
+            json=online_order_payload
+        )
+        print("ONLINE ORDER STATUS:", online_response.status_code)
+        print("ONLINE ORDER RESPONSE:", online_response.text)
 
     # -----------------------------
     # SAVE ORDER IN DJANGO DATABASE

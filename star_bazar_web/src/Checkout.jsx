@@ -377,97 +377,11 @@ useEffect(() => {
   if (!payment) return;
 
   if (payment === "success") {
-
-    const alreadyCreated = localStorage.getItem("invoice_created");
-    console.log("Checking if invoice already created for order ID:", orderId, "Already created:", alreadyCreated);  
-
-    // if (alreadyCreated === orderId) {
-    //   setOrderPlaced(true);
-    //   setOrderNumber(orderId);
-    //   return;
-    // }
-
-    const createInvoice = async () => {
-      try {
-        const savedPayload = JSON.parse(localStorage.getItem("order_payload"));
-        console.log("Saved payload for invoice creation:", savedPayload);
-
-        // If payload isn't available (common when gateway redirects to our site),
-        // try to reconstruct the payload from current cart/form state and
-        // create the invoice server-side. If reconstruction fails, fall back
-        // to showing the thank-you screen so the user isn't stuck.
-        if (!savedPayload) {
-          try {
-            const items = updatedCart.map(item => ({
-              item_code: item.item.item_code,
-              qty: item.qty,
-              name: item.item.item_name,
-              original_price: item.item.price,
-              amount: item.subtotal,
-              image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `${import.meta.env.VITE_FRAPPE_URL}${item.item.image}`) : null,
-            }));
-
-            const reconstructedPayload = {
-              order_id: orderId || crypto.randomUUID(),
-              customer_name: `${formData.firstName || ''} ${formData.lastName || ''}`.trim(),
-              first_name: formData.firstName || '',
-              last_name: formData.lastName || '',
-              email: formData.email || '',
-              phone: formData.phone || '',
-              items,
-              tax,
-              subtotal,
-              total,
-            };
-
-            console.log('Attempting to create invoice using reconstructed payload:', reconstructedPayload);
-
-            const res = await axios.post(
-              `${import.meta.env.VITE_DJANGO_URL}/create-sales-invoice/`,
-              reconstructedPayload
-            );
-
-            setOrderPlaced(true);
-            setOrderNumber(orderId || res.data.invoice || "");
-
-            localStorage.setItem("invoice_created", orderId || res.data.invoice || "");
-            localStorage.removeItem("cart");
-            localStorage.removeItem("order_payload");
-            return;
-          } catch (reErr) {
-            console.error('Reconstructed invoice creation failed:', reErr);
-            // fallback to showing thank-you page
-            setOrderPlaced(true);
-            setOrderNumber(orderId || "");
-            if (orderId) localStorage.setItem("invoice_created", orderId);
-            localStorage.removeItem("cart");
-            localStorage.removeItem("order_payload");
-            return;
-          }
-        }
-
-        const res = await axios.post(
-          `${import.meta.env.VITE_DJANGO_URL}/create-sales-invoice/`,
-          savedPayload
-        );
-
-        setOrderPlaced(true);
-        setOrderNumber(orderId || res.data.invoice || "");
-
-        localStorage.setItem("invoice_created", orderId || res.data.invoice || "");
-
-        localStorage.removeItem("cart");
-        localStorage.removeItem("order_payload");
-
-      } catch (error) {
-        console.error("Invoice creation failed:", error);
-        // Fallback: show thank-you page even if invoice creation failed so user isn't stuck.
-        setOrderPlaced(true);
-        setOrderNumber(orderId || "");
-      }
-    };
-
-    createInvoice();
+    setOrderPlaced(true);
+    setOrderNumber(params.get("invoice") || orderId || "");
+    if (orderId) localStorage.setItem("invoice_created", orderId);
+    localStorage.removeItem("cart");
+    localStorage.removeItem("order_payload");
   }
 
   if (payment === "failed") {
