@@ -815,15 +815,42 @@ def all_products(request):
     import concurrent.futures
 
     def fetch_prices():
-        price_url = (
-            f"{FRAPPE_URL}/api/resource/Item%20Price?"
-            f'filters=[["item_code","in",{item_codes_json}],'
-            f'["price_list","=","Standard Selling"]]'
-            f'&fields=["item_code","price_list_rate"]'
-            f'&order_by=creation desc'
-            f'&limit_page_length=500'
-        )
-        return requests.get(price_url, headers=HEADERS).json().get("data", [])
+        price_url = f"{FRAPPE_URL}/api/resource/Item%20Price"
+        params = {
+            "filters": json.dumps([
+                ["Item Price", "item_code", "in", item_codes],
+                ["Item Price", "price_list", "=", "Standard Selling"],
+            ]),
+            "fields": json.dumps(["item_code", "price_list_rate", "creation"]),
+            "order_by": "creation desc",
+            "limit_page_length": max(len(item_codes) * 5, 500),
+        }
+        price_rows = requests.get(price_url, headers=HEADERS, params=params).json().get("data", [])
+        found_codes = {row.get("item_code") for row in price_rows}
+
+        # Frappe's list endpoint can miss rows in a large IN query; search works
+        # because it asks for one code. Fill any bulk-query gaps one item at a time.
+        for code in item_codes:
+            if code in found_codes:
+                continue
+
+            fallback_params = {
+                "filters": json.dumps([
+                    ["Item Price", "item_code", "=", code],
+                    ["Item Price", "price_list", "=", "Standard Selling"],
+                ]),
+                "fields": json.dumps(["item_code", "price_list_rate", "creation"]),
+                "order_by": "creation desc",
+                "limit_page_length": 1,
+            }
+            fallback_rows = requests.get(
+                price_url,
+                headers=HEADERS,
+                params=fallback_params
+            ).json().get("data", [])
+            price_rows.extend(fallback_rows)
+
+        return price_rows
 
     def fetch_stock():
         bin_url = (
