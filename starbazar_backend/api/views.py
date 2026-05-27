@@ -854,14 +854,41 @@ def all_products(request):
         return price_rows
 
     def fetch_stock():
-        bin_url = (
-            f"{FRAPPE_URL}/api/resource/Bin?"
-            f'filters=[["item_code","in",{item_codes_json}],'
-            f'["warehouse","=","Stores - SB"]]'
-            f'&fields=["item_code","actual_qty"]'
-            f"&limit_page_length={max(len(item_codes), 500)}"
-        )
-        return requests.get(bin_url, headers=HEADERS).json().get("data", [])
+        bin_url = f"{FRAPPE_URL}/api/resource/Bin"
+        params = {
+            "filters": json.dumps([
+                ["Bin", "item_code", "in", item_codes],
+                ["Bin", "warehouse", "=", "Stores - SB"],
+            ]),
+            "fields": json.dumps(["item_code", "actual_qty"]),
+            "limit_page_length": max(len(item_codes), 500),
+        }
+        bin_rows = requests.get(bin_url, headers=HEADERS, params=params).json().get("data", [])
+        found_codes = {row.get("item_code") for row in bin_rows}
+
+        # Frappe list queries can omit rows in a bulk IN lookup. Search asks for
+        # one item, so fill any missing bulk rows the same way to keep stock
+        # status consistent between browsing and searching.
+        for code in item_codes:
+            if code in found_codes:
+                continue
+
+            fallback_params = {
+                "filters": json.dumps([
+                    ["Bin", "item_code", "=", code],
+                    ["Bin", "warehouse", "=", "Stores - SB"],
+                ]),
+                "fields": json.dumps(["item_code", "actual_qty"]),
+                "limit_page_length": 1,
+            }
+            fallback_rows = requests.get(
+                bin_url,
+                headers=HEADERS,
+                params=fallback_params
+            ).json().get("data", [])
+            bin_rows.extend(fallback_rows)
+
+        return bin_rows
 
     def fetch_pending():
         pending_url = f"{FRAPPE_URL}/api/method/star_bazar.star_bazar.api.stock.get_pending_pos_qty"
