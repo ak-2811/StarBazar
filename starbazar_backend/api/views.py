@@ -726,7 +726,7 @@ def get_categories(request):
     url = (
         f"{FRAPPE_URL}/api/resource/Item%20Group?"
         f'fields=["name"]'
-        f'&filters=[["name","!=","Scheme"]]'
+        f'&filters=[["name","!=","Scheme"],["name","!=","All Item Groups"]]'
         f"&limit_page_length=500"
     )
 
