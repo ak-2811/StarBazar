@@ -652,7 +652,7 @@ def get_products_by_codes(request):
     items_url = (
         f"{FRAPPE_URL}/api/resource/Item?"
         f'fields=["name","item_name","item_code","image","stock_uom","item_group","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
-        f"&filters=[[\"name\",\"in\",{item_codes_json}]]"
+        f"&filters=[[\"name\",\"in\",{item_codes_json}],[\"disabled\",\"=\",0]]"
         f"&limit_page_length=500"
     )
 
@@ -749,7 +749,7 @@ def all_products(request):
     availability = request.GET.get("availability")
     sort_by = request.GET.get("sort_by")
 
-    filters = [["item_group", "!=", "Scheme"]]
+    filters = [["item_group", "!=", "Scheme"], ["disabled", "=", 0]]
 
     if category and category != "all":
         filters.append(["item_group", "=", category])
@@ -993,7 +993,7 @@ def wishlist_products(request):
     # 1️⃣ Fetch Item basic info
     items_url = (
         f"{FRAPPE_URL}/api/resource/Item?"
-        f'filters=[["Item","name","in",{item_codes_json}]]'
+        f'filters=[["Item","name","in",{item_codes_json}],["Item","disabled","=",0]]'
         f'&fields=["name","item_name","item_code","image","stock_uom","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
     )
 
@@ -1152,7 +1152,7 @@ def best_sellers(request):
     # 2️⃣ Get Item basic info
     items_url = (
         f"{FRAPPE_URL}/api/resource/Item?"
-        f'filters=[["Item","name","in",{item_codes_json}]]'
+        f'filters=[["Item","name","in",{item_codes_json}],["Item","disabled","=",0]]'
         f'&fields=["name","item_name","item_code","image","stock_uom","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
     )
 
@@ -1315,7 +1315,7 @@ def shop_all_product(request):
     # 2️⃣ Get Item basic info
     items_url = (
         f"{FRAPPE_URL}/api/resource/Item?"
-        f'filters=[["Item","name","in",{item_codes_json}]]'
+        f'filters=[["Item","name","in",{item_codes_json}],["Item","disabled","=",0]]'
         f'&fields=["name","item_name","item_code","image","stock_uom","custom_food_stamp_enable","custom_non_food","custom_tobaco"]'
     )
 
