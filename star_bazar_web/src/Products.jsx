@@ -694,7 +694,7 @@ const handleLogout = () => {
                     {liked[product.item_code] ? '❤' : '🤍'}
                   </button>
                   <div className="product-body-full">
-                    <div className="product-name-full">{product.item_name}</div>
+                    <div className="product-name-full">{product.item_code}</div>
                     {/* <div className="product-brand">{product.brand}</div> */}
                     <div className="product-price-full">
                       ${product.price.toFixed(2)} <span className="unit">{product.unit}</span>
