@@ -39,6 +39,12 @@ productsFromServer.forEach(p => {
 // Get cart object from localStorage and keep it in state so UI updates when qty changes
 const [cartObject, setCartObject] = useState(() => JSON.parse(localStorage.getItem("cart")) || {});
 
+const clearCart = () => {
+  setCartObject({});
+  localStorage.removeItem("cart");
+  if (onClearCart) onClearCart();
+};
+
 // keep localStorage in sync if other tabs modify it
 useEffect(() => {
   const handler = () => {
@@ -380,7 +386,7 @@ useEffect(() => {
     setOrderPlaced(true);
     setOrderNumber(params.get("invoice") || orderId || "");
     if (orderId) localStorage.setItem("invoice_created", orderId);
-    localStorage.removeItem("cart");
+    clearCart();
     localStorage.removeItem("order_payload");
   }
 
