@@ -723,14 +723,19 @@ def get_products_by_codes(request):
 @api_view(['GET'])
 def get_categories(request):
 
-    url = (
-        f"{FRAPPE_URL}/api/resource/Item%20Group?"
-        f'fields=["name"]'
-        f'&filters=[["name","!=","Scheme"],["name","!=","All Item Groups"]]'
-        f"&limit_page_length=500"
-    )
+    url = f"{FRAPPE_URL}/api/resource/Item%20Group"
+    params = {
+        "fields": json.dumps(["name"]),
+        "filters": json.dumps([
+            ["name", "!=", "Scheme"],
+            ["name", "!=", "All Item Groups"],
+            ["name", "!=", "DRY FRUIT & NUTS"],
+            ["name", "!=", "FLOURS"],
+        ]),
+        "limit_page_length": 500,
+    }
 
-    response = requests.get(url, headers=HEADERS).json()
+    response = requests.get(url, headers=HEADERS, params=params).json()
     data = response.get("data", [])
 
     categories = [d["name"] for d in data]
