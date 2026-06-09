@@ -1460,22 +1460,186 @@ def shop_all_product(request):
     return Response(final_data)
 
 
+# @api_view(['GET'])
+# def pricing_offers(request):
+
+#     today = str(date.today())
+
+#     scheme_url = f"{FRAPPE_URL}/api/resource/Item%20Scheme"
+
+#     filters = [
+#         ["Item Scheme", "from_date", "<=", today],
+#         ["Item Scheme", "to_date", ">=", today],
+#         ["Item Scheme", "active", "=", 1]
+#     ]
+
+#     fields = [
+#         "name",
+#         "scheme_name",
+#         "from_date",
+#         "to_date",
+#         "item",
+#         "qty",
+#         "selling_price"
+#     ]
+
+#     response = requests.get(
+#         scheme_url,
+#         headers=HEADERS,
+#         params={
+#             "filters": json.dumps(filters),
+#             "fields": json.dumps(fields),
+#             "limit_page_length": 100
+#         }
+#     ).json()
+
+#     schemes = response.get("data", [])
+
+#     if not schemes:
+#         return Response([])
+
+#     final_data = []
+
+#     item_codes = [s.get("item") for s in schemes if s.get("item")]
+#     item_codes_json = json.dumps(item_codes)
+
+#     # Fetch the actual stock qty
+#     # 🔥Batch fetch REAL stock (Bin - Pending POS)
+
+#     # 1️⃣ Get base stock from Bin
+#     bin_url = (
+#         f"{FRAPPE_URL}/api/resource/Bin?"
+#         f'filters=[["item_code","in",{item_codes_json}],'
+#         f'["warehouse","=","Stores - SB"]]'
+#         f'&fields=["item_code","actual_qty"]'
+#         f"&limit_page_length={max(len(item_codes), 500)}"
+#     )
+
+#     bin_response = requests.get(bin_url, headers=HEADERS).json()
+#     bin_data = bin_response.get("data", [])
+
+#     bin_map = {d["item_code"]: float(d["actual_qty"] or 0) for d in bin_data}
+
+#     pending_url = f"{FRAPPE_URL}/api/method/star_bazar.star_bazar.api.stock.get_pending_pos_qty"
+#     # print("ITEM CODES SENT:", item_codes)
+
+#     pending_response = requests.post(
+#         pending_url,
+#         headers=HEADERS,
+#         json={"item_codes": item_codes}
+#     ).json()
+#     # print(pending_response)
+
+#     pending_rows = pending_response.get("message", [])
+
+#     pending_map = {}
+#     for row in pending_rows:
+#         item_code = row.get("item_code")
+#         sold_qty = float(row.get("sold_qty") or 0)
+#         pending_map[item_code] = sold_qty
+
+
+#     # 3️⃣ Final stock calculation
+#     stock_map = {}
+#     availability=""
+#     for code in item_codes:
+#         base = bin_map.get(code, 0)
+#         sold = pending_map.get(code, 0)
+#         available = base - sold
+#         stock_map[code] = max(available, 0)
+
+#     # 🔥 4️⃣ Apply availability filter
+#     if availability == "in-stock":
+#         items_data = [
+#             item for item in items_data
+#             if stock_map.get(item["item_code"], 0) > 0
+#         ]
+
+#     elif availability == "out-of-stock":
+#         items_data = [
+#             item for item in items_data
+#             if stock_map.get(item["item_code"], 0) <= 0
+#         ]
+
+
+
+#     for scheme in schemes:
+
+#         item_code = scheme.get("item")
+#         qty = scheme.get("qty", 0)
+#         selling_price = scheme.get("selling_price", 0)
+#         stock_qty = stock_map.get(item_code, 0)
+
+#         if not item_code or qty == 0:
+#             continue
+
+#         offer_price = float(selling_price) / float(qty)
+#         print(offer_price)
+
+#         # Fetch item details
+#         item_response = requests.get(
+#             f"{FRAPPE_URL}/api/resource/Item/{item_code}",
+#             headers=HEADERS,
+#             params={
+#                 "fields": json.dumps(["item_name","item_code", "image", "stock_uom","custom_food_stamp_enable","custom_non_food","custom_tobaco"])
+#             }
+#         ).json()
+
+#         item_data = item_response.get("data", {})
+
+#         # Fetch original price
+#         price_response = requests.get(
+#             f"{FRAPPE_URL}/api/resource/Item%20Price",
+#             headers=HEADERS,
+#             params={
+#                 "filters": json.dumps([
+#                     ["Item Price", "item_code", "=", item_code],
+#                     ["Item Price", "price_list", "=", "Standard Selling"]
+#                 ]),
+#                 "fields": json.dumps(["price_list_rate"]),
+#                 "order_by": "creation desc",
+#                 "limit_page_length": 1
+#             }
+#         ).json()
+
+#         price_data = price_response.get("data", [])
+#         original_price = price_data[0]["price_list_rate"] if price_data else 0
+
+#         final_data.append({
+#             "item_code": item_code,
+#             "item_name": item_data.get("item_name"),
+#             "image": item_data.get("image"),
+#             "unit": item_data.get("stock_uom"),
+#             "original_price": original_price,
+#             "food_stamp": item_data.get("custom_food_stamp_enable"),
+#             "non_food": item_data.get("custom_non_food"),
+#             "tobacco": item_data.get("custom_tobaco"),
+#             "price": offer_price,
+#             "min_qty": qty,
+#             "title": scheme.get("scheme_name"),
+#             "valid_from": scheme.get("from_date"),
+#             "valid_upto": scheme.get("to_date"),
+#             "in_stock":stock_qty>0,
+#             "stock":stock_qty,
+#         })
+
+#     return Response(final_data)
 @api_view(['GET'])
 def pricing_offers(request):
-
     today = str(date.today())
 
     scheme_url = f"{FRAPPE_URL}/api/resource/Item%20Scheme"
 
     filters = [
-        ["Item Scheme", "from_date", "<=", today],
-        ["Item Scheme", "to_date", ">=", today],
-        ["Item Scheme", "active", "=", 1]
+        ["from_date", "<=", today],
+        ["to_date", ">=", today],
+        ["active", "=", 1]
     ]
 
     fields = [
         "name",
         "scheme_name",
+        "scheme_type",
         "from_date",
         "to_date",
         "item",
@@ -1493,101 +1657,104 @@ def pricing_offers(request):
         }
     ).json()
 
+    print("FRAPPE ITEM SCHEME RESPONSE:", response)
+
     schemes = response.get("data", [])
 
     if not schemes:
         return Response([])
 
     final_data = []
+    all_item_codes = set()
+    combo_scheme_docs = {}
 
-    item_codes = [s.get("item") for s in schemes if s.get("item")]
-    item_codes_json = json.dumps(item_codes)
-
-    # Fetch the actual stock qty
-    # 🔥Batch fetch REAL stock (Bin - Pending POS)
-
-    # 1️⃣ Get base stock from Bin
-    bin_url = (
-        f"{FRAPPE_URL}/api/resource/Bin?"
-        f'filters=[["item_code","in",{item_codes_json}],'
-        f'["warehouse","=","Stores - SB"]]'
-        f'&fields=["item_code","actual_qty"]'
-        f"&limit_page_length={max(len(item_codes), 500)}"
-    )
-
-    bin_response = requests.get(bin_url, headers=HEADERS).json()
-    bin_data = bin_response.get("data", [])
-
-    bin_map = {d["item_code"]: float(d["actual_qty"] or 0) for d in bin_data}
-
-    pending_url = f"{FRAPPE_URL}/api/method/star_bazar.star_bazar.api.stock.get_pending_pos_qty"
-    # print("ITEM CODES SENT:", item_codes)
-
-    pending_response = requests.post(
-        pending_url,
-        headers=HEADERS,
-        json={"item_codes": item_codes}
-    ).json()
-    # print(pending_response)
-
-    pending_rows = pending_response.get("message", [])
-
-    pending_map = {}
-    for row in pending_rows:
-        item_code = row.get("item_code")
-        sold_qty = float(row.get("sold_qty") or 0)
-        pending_map[item_code] = sold_qty
-
-
-    # 3️⃣ Final stock calculation
-    stock_map = {}
-    availability=""
-    for code in item_codes:
-        base = bin_map.get(code, 0)
-        sold = pending_map.get(code, 0)
-        available = base - sold
-        stock_map[code] = max(available, 0)
-
-    # 🔥 4️⃣ Apply availability filter
-    if availability == "in-stock":
-        items_data = [
-            item for item in items_data
-            if stock_map.get(item["item_code"], 0) > 0
-        ]
-
-    elif availability == "out-of-stock":
-        items_data = [
-            item for item in items_data
-            if stock_map.get(item["item_code"], 0) <= 0
-        ]
-
-
-
+    # Collect all item codes
     for scheme in schemes:
+        scheme_type = scheme.get("scheme_type")
 
-        item_code = scheme.get("item")
-        qty = scheme.get("qty", 0)
-        selling_price = scheme.get("selling_price", 0)
-        stock_qty = stock_map.get(item_code, 0)
+        if scheme_type == "Single Item":
+            item_code = scheme.get("item")
+            if item_code:
+                all_item_codes.add(item_code)
 
-        if not item_code or qty == 0:
-            continue
+        elif scheme_type == "Combo Item":
+            full_scheme_response = requests.get(
+                f"{FRAPPE_URL}/api/resource/Item%20Scheme/{scheme.get('name')}",
+                headers=HEADERS
+            ).json()
 
-        offer_price = float(selling_price) / float(qty)
-        print(offer_price)
+            full_scheme = full_scheme_response.get("data", {})
+            combo_scheme_docs[scheme.get("name")] = full_scheme
 
-        # Fetch item details
+            for row in full_scheme.get("combo_items", []):
+                item_code = row.get("item_code") or row.get("item")
+                if item_code:
+                    all_item_codes.add(item_code)
+
+    item_codes = list(all_item_codes)
+
+    stock_map = {}
+
+    if item_codes:
+        item_codes_json = json.dumps(item_codes)
+
+        bin_url = (
+            f"{FRAPPE_URL}/api/resource/Bin?"
+            f'filters=[["item_code","in",{item_codes_json}],'
+            f'["warehouse","=","Stores - SB"]]'
+            f'&fields=["item_code","actual_qty"]'
+            f"&limit_page_length={max(len(item_codes), 500)}"
+        )
+
+        bin_response = requests.get(bin_url, headers=HEADERS).json()
+        bin_data = bin_response.get("data", [])
+
+        bin_map = {
+            d["item_code"]: float(d.get("actual_qty") or 0)
+            for d in bin_data
+        }
+
+        pending_url = f"{FRAPPE_URL}/api/method/star_bazar.star_bazar.api.stock.get_pending_pos_qty"
+
+        pending_response = requests.post(
+            pending_url,
+            headers=HEADERS,
+            json={"item_codes": item_codes}
+        ).json()
+
+        pending_rows = pending_response.get("message", [])
+
+        pending_map = {}
+        for row in pending_rows:
+            item_code = row.get("item_code")
+            sold_qty = float(row.get("sold_qty") or 0)
+            pending_map[item_code] = sold_qty
+
+        for code in item_codes:
+            base = bin_map.get(code, 0)
+            sold = pending_map.get(code, 0)
+            stock_map[code] = max(base - sold, 0)
+
+    def get_item_details(item_code):
         item_response = requests.get(
             f"{FRAPPE_URL}/api/resource/Item/{item_code}",
             headers=HEADERS,
             params={
-                "fields": json.dumps(["item_name","item_code", "image", "stock_uom","custom_food_stamp_enable","custom_non_food","custom_tobaco"])
+                "fields": json.dumps([
+                    "item_name",
+                    "item_code",
+                    "image",
+                    "stock_uom",
+                    "custom_food_stamp_enable",
+                    "custom_non_food",
+                    "custom_tobaco"
+                ])
             }
         ).json()
 
-        item_data = item_response.get("data", {})
+        return item_response.get("data", {})
 
-        # Fetch original price
+    def get_original_price(item_code):
         price_response = requests.get(
             f"{FRAPPE_URL}/api/resource/Item%20Price",
             headers=HEADERS,
@@ -1603,24 +1770,104 @@ def pricing_offers(request):
         ).json()
 
         price_data = price_response.get("data", [])
-        original_price = price_data[0]["price_list_rate"] if price_data else 0
 
-        final_data.append({
-            "item_code": item_code,
-            "item_name": item_data.get("item_name"),
-            "image": item_data.get("image"),
-            "unit": item_data.get("stock_uom"),
-            "original_price": original_price,
-            "food_stamp": item_data.get("custom_food_stamp_enable"),
-            "non_food": item_data.get("custom_non_food"),
-            "tobacco": item_data.get("custom_tobaco"),
-            "price": offer_price,
-            "min_qty": qty,
-            "title": scheme.get("scheme_name"),
-            "valid_from": scheme.get("from_date"),
-            "valid_upto": scheme.get("to_date"),
-            "in_stock":stock_qty>0,
-            "stock":stock_qty,
-        })
+        if price_data:
+            return float(price_data[0].get("price_list_rate") or 0)
+
+        return 0
+
+    for scheme in schemes:
+        scheme_type = scheme.get("scheme_type")
+
+        if scheme_type == "Single Item":
+            item_code = scheme.get("item")
+            qty = float(scheme.get("qty") or 0)
+            selling_price = float(scheme.get("selling_price") or 0)
+
+            if not item_code or qty <= 0:
+                continue
+
+            item_data = get_item_details(item_code)
+            original_price = get_original_price(item_code)
+            stock_qty = stock_map.get(item_code, 0)
+
+            final_data.append({
+                "scheme_id": scheme.get("name"),
+                "scheme_type": "Single Item",
+                "item_code": item_code,
+                "item_name": item_data.get("item_name"),
+                "image": item_data.get("image"),
+                "unit": item_data.get("stock_uom"),
+                "original_price": original_price,
+                "price": selling_price / qty,
+                "bundle_price": selling_price,
+                "min_qty": qty,
+                "title": scheme.get("scheme_name"),
+                "valid_from": scheme.get("from_date"),
+                "valid_upto": scheme.get("to_date"),
+                "food_stamp": item_data.get("custom_food_stamp_enable"),
+                "non_food": item_data.get("custom_non_food"),
+                "tobacco": item_data.get("custom_tobaco"),
+                "in_stock": stock_qty > 0,
+                "stock": stock_qty,
+                "combo_items": []
+            })
+
+        elif scheme_type == "Combo Item":
+            full_scheme = combo_scheme_docs.get(scheme.get("name"), {})
+
+            required_qty = float(scheme.get("qty") or 0)
+            selling_price = float(scheme.get("selling_price") or 0)
+
+            if required_qty <= 0 or selling_price <= 0:
+                continue
+
+            combo_items = []
+
+            for row in full_scheme.get("combo_items", []):
+                item_code = row.get("item_code") or row.get("item")
+
+                if not item_code:
+                    continue
+
+                item_data = get_item_details(item_code)
+                original_price = get_original_price(item_code)
+                stock_qty = stock_map.get(item_code, 0)
+
+                combo_items.append({
+                    "item_code": item_code,
+                    "item_name": item_data.get("item_name"),
+                    "image": item_data.get("image"),
+                    "unit": item_data.get("stock_uom"),
+                    "price": original_price,
+                    "original_price": original_price,
+                    "food_stamp": item_data.get("custom_food_stamp_enable"),
+                    "non_food": item_data.get("custom_non_food"),
+                    "tobacco": item_data.get("custom_tobaco"),
+                    "in_stock": stock_qty > 0,
+                    "stock": stock_qty
+                })
+
+            if not combo_items:
+                continue
+
+            final_data.append({
+                "scheme_id": scheme.get("name"),
+                "scheme_type": "Combo Item",
+                "item_code": None,
+                "item_name": None,
+                "image": combo_items[0].get("image"),
+                "unit": None,
+                "original_price": 0,
+                "price": selling_price / required_qty,
+                "bundle_price": selling_price,
+                "min_qty": required_qty,
+                "title": scheme.get("scheme_name"),
+                "valid_from": scheme.get("from_date"),
+                "valid_upto": scheme.get("to_date"),
+                "in_stock": any(item["in_stock"] for item in combo_items),
+                "stock": sum(item["stock"] for item in combo_items),
+                "combo_items": combo_items
+            })
 
     return Response(final_data)

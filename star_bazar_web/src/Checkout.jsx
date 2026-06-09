@@ -134,55 +134,144 @@ useEffect(() => {
 
 
 // 🔥 Apply offer logic
-const updatedCart = cart.map(cartItem => {
+// const updatedCart = cart.map(cartItem => {
 
-  const rule = offers.find(
-    offer => offer.item_code === cartItem.item.item_code
-  );
+//   const rule = offers.find(
+//     offer => offer.item_code === cartItem.item.item_code
+//   );
 
+//   const originalPrice = Number(cartItem.item.price);
+//   const qty = cartItem.qty;
+
+//   if (!rule) {
+//     return {
+//       ...cartItem,
+//       final_price: originalPrice,
+//       subtotal: originalPrice * qty,
+//       is_discounted: false
+//     };
+//   }
+
+//   const minQty = Number(rule.min_qty);
+//   const offerUnitPrice = Number(rule.price);
+
+//   if (qty < minQty) {
+//     return {
+//       ...cartItem,
+//       final_price: originalPrice,
+//       subtotal: originalPrice * qty,
+//       is_discounted: false
+//     };
+//   }
+
+//   // 🔥 Bundle logic
+//   const bundles = Math.floor(qty / minQty);
+//   const remaining = qty % minQty;
+
+//   const bundlePrice = offerUnitPrice * minQty;
+
+//   const total =
+//     (bundles * bundlePrice) +
+//     (remaining * originalPrice);
+
+//   return {
+//     ...cartItem,
+//     final_price: total / qty,   // average per item for UI
+//     subtotal: total,
+//     is_discounted: true
+//   };
+// });
+let updatedCart = cart.map(cartItem => {
   const originalPrice = Number(cartItem.item.price);
-  const qty = cartItem.qty;
-
-  if (!rule) {
-    return {
-      ...cartItem,
-      final_price: originalPrice,
-      subtotal: originalPrice * qty,
-      is_discounted: false
-    };
-  }
-
-  const minQty = Number(rule.min_qty);
-  const offerUnitPrice = Number(rule.price);
-
-  if (qty < minQty) {
-    return {
-      ...cartItem,
-      final_price: originalPrice,
-      subtotal: originalPrice * qty,
-      is_discounted: false
-    };
-  }
-
-  // 🔥 Bundle logic
-  const bundles = Math.floor(qty / minQty);
-  const remaining = qty % minQty;
-
-  const bundlePrice = offerUnitPrice * minQty;
-
-  const total =
-    (bundles * bundlePrice) +
-    (remaining * originalPrice);
+  const qty = Number(cartItem.qty);
 
   return {
     ...cartItem,
-    final_price: total / qty,   // average per item for UI
-    subtotal: total,
-    is_discounted: true
+    final_price: originalPrice,
+    subtotal: originalPrice * qty,
+    is_discounted: false,
+    offer_title: ""
   };
 });
 
-// Prepare for UI (matching your static structure)
+// Single Item offers
+updatedCart = updatedCart.map(cartItem => {
+  const rule = offers.find(
+    offer =>
+      offer.scheme_type === "Single Item" &&
+      offer.item_code === cartItem.item.item_code
+  );
+
+  if (!rule) return cartItem;
+
+  const originalPrice = Number(cartItem.item.price);
+  const qty = Number(cartItem.qty);
+  const minQty = Number(rule.min_qty);
+  const bundlePrice = Number(rule.bundle_price);
+
+  if (qty < minQty) return cartItem;
+
+  const bundles = Math.floor(qty / minQty);
+  const remaining = qty % minQty;
+
+  const total = bundles * bundlePrice + remaining * originalPrice;
+
+  return {
+    ...cartItem,
+    final_price: total / qty,
+    subtotal: total,
+    is_discounted: true,
+    offer_title: rule.title
+  };
+});
+
+// Combo Item offers
+const comboOffers = offers.filter(o => o.scheme_type === "Combo Item");
+
+comboOffers.forEach(rule => {
+  const comboItemCodes = (rule.combo_items || []).map(i => i.item_code);
+  const minQty = Number(rule.min_qty);
+  const bundlePrice = Number(rule.bundle_price);
+
+  const eligibleQty = updatedCart.reduce((sum, cartItem) => {
+    if (comboItemCodes.includes(cartItem.item.item_code)) {
+      return sum + Number(cartItem.qty);
+    }
+    return sum;
+  }, 0);
+
+  if (eligibleQty < minQty) return;
+
+  let discountQtyLeft = Math.floor(eligibleQty / minQty) * minQty;
+  const offerUnitPrice = bundlePrice / minQty;
+
+  updatedCart = updatedCart.map(cartItem => {
+    if (!comboItemCodes.includes(cartItem.item.item_code)) return cartItem;
+    if (discountQtyLeft <= 0) return cartItem;
+
+    const originalPrice = Number(cartItem.item.price);
+    const qty = Number(cartItem.qty);
+
+    const discountedQty = Math.min(qty, discountQtyLeft);
+    const normalQty = qty - discountedQty;
+
+    const total =
+      discountedQty * offerUnitPrice +
+      normalQty * originalPrice;
+
+    discountQtyLeft -= discountedQty;
+
+    return {
+      ...cartItem,
+      final_price: total / qty,
+      subtotal: total,
+      is_discounted: true,
+      offer_title: rule.title
+    };
+  });
+});
+
+// Prepare for UI
 const cartItems = updatedCart.map(item => ({
   id: item.item.item_code,
   name: item.item.item_name,
@@ -193,9 +282,28 @@ const cartItems = updatedCart.map(item => ({
   subtotal: item.subtotal,
   original_price: item.item.price,
   is_discounted: item.is_discounted,
-  image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `${import.meta.env.VITE_FRAPPE_URL}${item.item.image}`) : null,
+  offer_title: item.offer_title,
+  image: item.item.image
+    ? item.item.image.startsWith("http")
+      ? item.item.image
+      : `${import.meta.env.VITE_FRAPPE_URL}${item.item.image}`
+    : null,
   item_code: item.item.item_code
 }));
+// Prepare for UI (matching your static structure)
+// const cartItems = updatedCart.map(item => ({
+//   id: item.item.item_code,
+//   name: item.item.item_name,
+//   emoji: item.item.emoji,
+//   unit: item.item.unit,
+//   price: item.final_price,
+//   quantity: item.qty,
+//   subtotal: item.subtotal,
+//   original_price: item.item.price,
+//   is_discounted: item.is_discounted,
+//   image: item.item.image ? (item.item.image.startsWith('http') ? item.item.image : `${import.meta.env.VITE_FRAPPE_URL}${item.item.image}`) : null,
+//   item_code: item.item.item_code
+// }));
 // Totals
 const subtotal = updatedCart.reduce(
   (sum, item) => sum + item.subtotal,
@@ -833,7 +941,7 @@ useEffect(() => {
                             <div className="item-unit-right">{item.unit}</div>
                                 {item.is_discounted && (
                                     <div style={{color: "green", fontSize: "0.85rem", fontWeight: "600", marginTop: "0.3rem"}}>
-                                    Offer Applied 🎉
+                                    {item.offer_title || "Offer Applied 🎉"}
                                     <div style={{color:"#888", fontSize:"0.8rem"}}>
                                         Original: ${item.original_price.toFixed(2)}
                                     </div>

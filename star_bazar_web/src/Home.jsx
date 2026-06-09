@@ -85,14 +85,15 @@ function Home() {
 
 // Getting the offer products
   useEffect(() => {
-  axios.get(`${import.meta.env.VITE_DJANGO_URL}/pricing-offers/`)
-    .then(res => {
-      setSpecialOffers(res.data)
-    })
-    .catch(err => {
-      console.error("Error fetching best sellers:", err)
-    })
-}, [])
+    axios.get(`${import.meta.env.VITE_DJANGO_URL}/pricing-offers/`)
+      .then(res => {
+        console.log("SPECIAL OFFERS DATA:", res.data)
+        setSpecialOffers(res.data)
+      })
+      .catch(err => {
+        console.error("Error fetching offers:", err.response?.data || err)
+      })
+  }, [])
 
 const [cart, setCart] = useState(
   JSON.parse(localStorage.getItem("cart")) || {}
@@ -323,6 +324,13 @@ function decreaseQty(p) {
     }
   })
 }
+const singleItemOffers = specialOffers.filter(
+  offer => offer.scheme_type !== "Combo Item"
+);
+
+const comboOffers = specialOffers.filter(
+  offer => offer.scheme_type === "Combo Item"
+);
 
 const handleLogout = () => {
   localStorage.removeItem("token")
@@ -548,48 +556,111 @@ const handleLogout = () => {
           )}
         <section className="offers-section">
           <h3>🎉 Special Offers</h3>
+
           <div className="offers-grid">
-            {specialOffers.map(p => (
-              <article key={p.item_code} className="offer-card">
-                {/* <button
-                  type="button"
-                  className={`heart-btn ${liked[p.item_code] ? 'liked' : ''}`}
-                  onClick={(e) => { e.stopPropagation(); toggleLike(p.item_code) }}
-                  title={liked[p.item_code] ? 'Remove from wishlist' : 'Add to wishlist'}
-                >
-                  {liked[p.item_code] ? '❤' : '🤍'}
-                </button> */}
+            {singleItemOffers.map((offer, index) => (
+              <article
+                key={offer.scheme_id || offer.item_code || index}
+                className="offer-card"
+              >
                 <div className="offer-badge">Special Deal</div>
-                <div className="offer-img">{p.image ? <img src={`${import.meta.env.VITE_FRAPPE_URL}${p.image}`} alt={p.item_code} /> : p.emoji}</div>
+
+                <div className="offer-img">
+                  {offer.image ? (
+                    <img
+                      src={
+                        offer.image.startsWith("http")
+                          ? offer.image
+                          : `${import.meta.env.VITE_FRAPPE_URL}${offer.image}`
+                      }
+                      alt={offer.item_name}
+                    />
+                  ) : (
+                    <div className="combo-no-image"></div>
+                  )}
+                </div>
+
                 <div className="offer-body">
-                  <div className="offer-name">{p.item_name}</div>
+                  <div className="offer-name">{offer.item_code}</div>
+
                   <div className="price-section">
-                    <div className="original-price">${p.original_price.toFixed(2)}</div>
+                    <div className="original-price">
+                      ${Number(offer.original_price || 0).toFixed(2)}
+                    </div>
                   </div>
-                  <div className="offer-text">{p.title}</div>
-                  
-                  {cart[p.item_code] ? (
+
+                  <div className="offer-text">{offer.title}</div>
+
+                  {cart[offer.item_code] ? (
                     <div className="qty-selector">
-                      <button className="qty-btn minus" onClick={() => decreaseQty(p)}>−</button>
-                      <div className='qty-display'>
-                        <span className="qty-value">
-                          {cart[p.item_code].qty}
-                        </span>
+                      <button className="qty-btn minus" onClick={() => decreaseQty(offer)}>
+                        −
+                      </button>
+
+                      <div className="qty-display">
+                        <span className="qty-value">{cart[offer.item_code].qty}</span>
                       </div>
 
-                      <button className="qty-btn plus" onClick={() => increaseQty(p)}disabled={(cart[p.item_code]?.qty || 0) >= p.stock}>+</button>
+                      <button
+                        className="qty-btn plus"
+                        onClick={() => increaseQty(offer)}
+                        disabled={
+                          Number(offer.stock || 0) > 0 &&
+                          (cart[offer.item_code]?.qty || 0) >= Number(offer.stock || 0)
+                        }
+                      >
+                        +
+                      </button>
                     </div>
-                  ) :!p.in_stock ? (
+                  ) : !offer.in_stock ? (
                     <button className="add-btn-full disabled-btn" disabled>
                       Out of Stock
                     </button>
-                  ): (
-                    <button className="add-btn" onClick={() => increaseQty(p)}> Add to Cart </button>
+                  ) : (
+                    <button className="add-btn" onClick={() => increaseQty(offer)}>
+                      Add to Cart
+                    </button>
                   )}
                 </div>
               </article>
             ))}
           </div>
+
+          {comboOffers.length > 0 && (
+            <div className="mixmatch-section">
+              <h3>🛒 Mix & Match Offers</h3>
+
+              <div className="mixmatch-grid">
+                {comboOffers.map((offer, index) => (
+                  <article
+                    key={offer.scheme_id || index}
+                    className="mixmatch-card"
+                  >
+                    <div className="mixmatch-badge">Mix & Match</div>
+
+                    <div className="combo-big-deal">
+                      Buy any {Number(offer.min_qty)} for $
+                      {Number(offer.bundle_price || 0).toFixed(2)}
+                    </div>
+
+                    <div className="combo-subtitle">Eligible items:</div>
+
+                    <div className="combo-name-list">
+                      {(offer.combo_items || []).map(item => (
+                        <div key={item.item_code} className="combo-name-pill">
+                          ✓ {item.item_code}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="combo-note">
+                      Add any combination of these items to cart from the product list.
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
 
         <section className="shop-grid">
