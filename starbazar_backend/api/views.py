@@ -1702,7 +1702,7 @@ def pricing_offers(request):
         bin_url = (
             f"{FRAPPE_URL}/api/resource/Bin?"
             f'filters=[["item_code","in",{item_codes_json}],'
-            f'["warehouse","=","Stores - A"]]'
+            f'["warehouse","=","Stores - SB"]]'
             f'&fields=["item_code","actual_qty"]'
             f"&limit_page_length={max(len(item_codes), 500)}"
         )
