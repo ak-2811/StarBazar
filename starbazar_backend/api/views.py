@@ -1657,8 +1657,6 @@ def pricing_offers(request):
         }
     ).json()
 
-    print("FRAPPE ITEM SCHEME RESPONSE:", response)
-
     schemes = response.get("data", [])
 
     if not schemes:
@@ -1666,28 +1664,31 @@ def pricing_offers(request):
 
     final_data = []
     all_item_codes = set()
-    combo_scheme_docs = {}
+    full_scheme_map = {}
 
-    # Collect all item codes
+    # Fetch full schemes and collect real item codes
     for scheme in schemes:
+        scheme_name = scheme.get("name")
         scheme_type = scheme.get("scheme_type")
 
+        full_scheme_response = requests.get(
+            f"{FRAPPE_URL}/api/resource/Item%20Scheme/{scheme_name}",
+            headers=HEADERS
+        ).json()
+
+        full_scheme = full_scheme_response.get("data", {})
+        full_scheme_map[scheme_name] = full_scheme
+
         if scheme_type == "Single Item":
-            item_code = scheme.get("item")
+            item_code = full_scheme.get("item") or scheme.get("item")
+
             if item_code:
                 all_item_codes.add(item_code)
 
         elif scheme_type == "Combo Item":
-            full_scheme_response = requests.get(
-                f"{FRAPPE_URL}/api/resource/Item%20Scheme/{scheme.get('name')}",
-                headers=HEADERS
-            ).json()
-
-            full_scheme = full_scheme_response.get("data", {})
-            combo_scheme_docs[scheme.get("name")] = full_scheme
-
             for row in full_scheme.get("combo_items", []):
                 item_code = row.get("item_code") or row.get("item")
+
                 if item_code:
                     all_item_codes.add(item_code)
 
@@ -1701,7 +1702,7 @@ def pricing_offers(request):
         bin_url = (
             f"{FRAPPE_URL}/api/resource/Bin?"
             f'filters=[["item_code","in",{item_codes_json}],'
-            f'["warehouse","=","Stores - SB"]]'
+            f'["warehouse","=","Stores - A"]]'
             f'&fields=["item_code","actual_qty"]'
             f"&limit_page_length={max(len(item_codes), 500)}"
         )
@@ -1725,6 +1726,7 @@ def pricing_offers(request):
         pending_rows = pending_response.get("message", [])
 
         pending_map = {}
+
         for row in pending_rows:
             item_code = row.get("item_code")
             sold_qty = float(row.get("sold_qty") or 0)
@@ -1734,6 +1736,7 @@ def pricing_offers(request):
             base = bin_map.get(code, 0)
             sold = pending_map.get(code, 0)
             stock_map[code] = max(base - sold, 0)
+
 
     def get_item_details(item_code):
         item_response = requests.get(
