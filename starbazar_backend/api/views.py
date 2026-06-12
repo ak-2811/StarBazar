@@ -1817,7 +1817,7 @@ def pricing_offers(request):
             })
 
         elif scheme_type == "Combo Item":
-            full_scheme = combo_scheme_docs.get(scheme.get("name"), {})
+            full_scheme = full_scheme_map.get(scheme.get("name"), {})
 
             required_qty = float(scheme.get("qty") or 0)
             selling_price = float(scheme.get("selling_price") or 0)
