@@ -1695,19 +1695,45 @@ def pricing_offers(request):
     stock_map = {}
 
     if item_codes:
-        item_codes_json = json.dumps(item_codes)
-
-        # same warehouse as your old working code
-        bin_url = (
-            f"{FRAPPE_URL}/api/resource/Bin?"
-            f'filters=[["item_code","in",{item_codes_json}],'
-            f'["warehouse","=","Stores - SB"]]'
-            f'&fields=["item_code","actual_qty"]'
-            f"&limit_page_length={max(len(item_codes), 500)}"
-        )
-
-        bin_response = requests.get(bin_url, headers=HEADERS).json()
+        bin_url = f"{FRAPPE_URL}/api/resource/Bin"
+        bin_response = requests.get(
+            bin_url,
+            headers=HEADERS,
+            params={
+                "filters": json.dumps([
+                    ["Bin", "item_code", "in", item_codes],
+                    ["Bin", "warehouse", "=", "Stores - SB"]
+                ]),
+                "fields": json.dumps(["item_code", "actual_qty"]),
+                "limit_page_length": max(len(item_codes), 500)
+            }
+        ).json()
         bin_data = bin_response.get("data", [])
+
+        # Frappe can omit valid rows from a bulk IN query. Fetch each missing
+        # offer item directly before treating it as out of stock.
+        found_item_codes = {row.get("item_code") for row in bin_data}
+
+        for item_code in item_codes:
+            if item_code in found_item_codes:
+                continue
+
+            exact_response = requests.get(
+                bin_url,
+                headers=HEADERS,
+                params={
+                    "filters": json.dumps([
+                        ["Bin", "item_code", "=", item_code],
+                        ["Bin", "warehouse", "=", "Stores - SB"]
+                    ]),
+                    "fields": json.dumps(["item_code", "actual_qty"]),
+                    "limit_page_length": 1
+                }
+            ).json()
+            exact_rows = exact_response.get("data", [])
+
+            if exact_rows:
+                bin_data.extend(exact_rows)
 
         bin_map = {
             d["item_code"]: float(d.get("actual_qty") or 0)
